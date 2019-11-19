@@ -7,6 +7,7 @@ class EDIFile(io.TextIOWrapper):
     def __init__(self):
         super().__init__()
         self._header = self.get_header()
+        self.reconfigure(encoding=self.get_encoding_from_header())
 
     def get_header(self):
         if hasattr(self, '_header'):
@@ -15,3 +16,6 @@ class EDIFile(io.TextIOWrapper):
         header = self.readline()
         self.seek(position)
         return header
+
+    def get_encoding_from_header(self):
+        return 'latin1'
