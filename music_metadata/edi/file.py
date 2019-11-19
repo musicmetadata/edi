@@ -4,8 +4,8 @@ import io
 class EDIFile(io.TextIOWrapper):
     encoding = 'latin1'
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self._header = self.get_header()
         self.reconfigure(encoding=self.get_encoding_from_header())
 
