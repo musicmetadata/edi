@@ -1,7 +1,6 @@
 import io
 
-class EDIFile(io.TextIOBase):
+
+class EDIFile(io.TextIOWrapper):
     encoding = 'latin1'
-
-
 
