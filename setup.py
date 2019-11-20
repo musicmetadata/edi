@@ -12,7 +12,7 @@ setuptools.setup(
     long_description=long_description,
     long_description_content_type="text/markdown",
     url="https://github.com/musicmetadata/territories",
-    packages=setuptools.find_namespace_packages(include=['music_metadata.*']),
+    # packages=setuptools.find_namespace_packages(include=['music_metadata.*']),
     namespace_packages=['music_metadata'],
     # package_data={
     #     '': ['*.csv'],
