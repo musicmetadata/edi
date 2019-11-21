@@ -92,13 +92,12 @@ class TestEDI(unittest.TestCase):
         Test EDI generation.
         """
         f = BytesIO(b'')
-        e = EDIFile(f)
-        g = EDIGroup(gtype='WRK')
+        EDIFile(f)
+        EDIGroup(gtype='WRK')
         t = EDITransaction(gtype='WRK')
-        print(t.type)
         r = EDITransactionRecord()
         r.record_type = t.type
-        with self.assertRaises(ValueError) as ve:
+        with self.assertRaises(ValueError):
             r.record_sequence_number = 'A'
         r.transaction_sequence_number = 0
         r.record_sequence_number = 0

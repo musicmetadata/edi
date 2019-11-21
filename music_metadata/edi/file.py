@@ -2,8 +2,10 @@ import io
 import re
 from .transaction import EDITransaction
 
+
 RE_GROUPS = re.compile(
     r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)', re.M | re.S)
+
 
 class EDIFile(io.TextIOWrapper):
     encoding = 'latin1'
@@ -34,8 +36,8 @@ class EDIFile(io.TextIOWrapper):
                 try:
                     current_sequence = int(sequence)
                 except ValueError:
-                     raise ValueError(
-                         f'Group sequence is not an integer { sequence }.')
+                    raise ValueError(
+                        f'Group sequence is not an integer { sequence }.')
                 if current_sequence != expected_sequence:
                     raise ValueError(
                         f'Wrong group sequence {current_sequence}, should be '

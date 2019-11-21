@@ -115,7 +115,7 @@ class EDIRecord(object, metaclass=EDIRecordMeta):
         self.type = None
         self.valid = True
         self.errors = []
-        if self.line and len(line)>3:
+        if self.line and len(line) > 3:
             self.split_into_fields()
             self.type = line[0:3]
 
