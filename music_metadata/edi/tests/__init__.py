@@ -49,7 +49,6 @@ class TestEDI(unittest.TestCase):
                 self.assertEqual(record.sequence, 1)
                 self.assertIn(' 000000X3', str(record.errors[0]))
 
-
     def test_cwr21_processing(self):
         """
         Test EDI part of a CWR2.1 import.

@@ -19,33 +19,42 @@ class EDITransaction(object):
     def __str__(self):
         return f'{self.type}{self.sequence:08d}'
 
+    @staticmethod
+    def test_t_sequence(expected_t_sequence, t_sequence):
+        try:
+            current_t_sequence = int(t_sequence)
+        except ValueError:
+            raise ValueError(
+                f'Transaction sequence is not an integer {t_sequence}.')
+        if current_t_sequence != expected_t_sequence:
+            raise ValueError(
+                f'Wrong transaction sequence {current_t_sequence}, should be '
+                f'{expected_t_sequence}')
+
+    def test_r_sequence(self, expected_r_sequence, r_sequence):
+        try:
+            current_r_sequence = int(r_sequence)
+        except ValueError:
+            raise ValueError(
+                f'Record sequence is not an integer {r_sequence}.')
+        if current_r_sequence != expected_r_sequence:
+            raise ValueError(
+                f'Wrong record sequence {current_r_sequence}, should be '
+                f'{expected_r_sequence} in transaction {self}')
+
     def split_into_records(self, reraise=True):
         expected_t_sequence = self.sequence or 0
         for expected_r_sequence, line in enumerate(
                 self.lines.strip().split('\n')):
             try:
                 t_sequence = line[3:11]
-                try:
-                    current_t_sequence = int(t_sequence)
-                except ValueError:
-                    raise ValueError(
-                        f'Transaction sequence is not an integer {t_sequence}.')
-                if current_t_sequence != expected_t_sequence:
-                    raise ValueError(
-                        f'Wrong transaction sequence {current_t_sequence}, should be '
-                        f'{expected_t_sequence}')
+                self.test_t_sequence(expected_t_sequence, t_sequence)
 
                 r_sequence = line[11:19]
-                try:
-                    current_r_sequence = int(r_sequence)
-                except ValueError:
-                    raise ValueError(
-                        f'Record sequence is not an integer {r_sequence}.')
-                if current_r_sequence != expected_r_sequence:
-                    raise ValueError(
-                        f'Wrong record sequence {current_r_sequence}, should be '
-                        f'{expected_r_sequence} in transaction { self }')
+                self.test_r_sequence(expected_r_sequence, r_sequence)
+
                 yield EDITransactionRecord(line, expected_r_sequence)
+
             except ValueError as e:
                 self.valid = False
                 self.errors.append(e)
