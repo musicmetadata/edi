@@ -1,6 +1,6 @@
 import unittest
 from music_metadata.edi import (
-    EDIFile, EDIGroup, EDITransaction, EDITransactionRecord, EDINumericField)
+    EDIFile, EDIGroup, EDITransaction, EDITransactionRecord)
 import os
 from io import BytesIO
 

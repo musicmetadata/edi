@@ -82,5 +82,3 @@ class EDIGroup(object):
 
     def get_transactions_with_errors(self):
         return self.get_transactions(reraise=False)
-
-
