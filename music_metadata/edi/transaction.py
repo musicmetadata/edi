@@ -1,6 +1,7 @@
 import collections
 from weakref import WeakKeyDictionary
 
+
 class EDITransaction(object):
     def __init__(
             self, gtype, lines=None, sequence=None, reraise=True, *args, **kwargs):
@@ -44,11 +45,11 @@ class EDITransaction(object):
                     raise ValueError(
                         f'Wrong record sequence {current_r_sequence}, should be '
                         f'{expected_r_sequence} in transaction { self }')
-                yield EDITransactionRecord(line)
+                yield EDITransactionRecord(line, expected_r_sequence)
             except ValueError as e:
                 self.valid = False
                 self.errors.append(e)
-                record = EDIRecord(line)
+                record = EDIRecord(line, expected_r_sequence)
                 record.valid = False
                 record.errors.append(e)
                 if reraise:
@@ -110,7 +111,7 @@ class EDIRecord(object, metaclass=EDIRecordMeta):
         super().__init__()
         self.sequence = sequence
         self.line = line
-        self.rest = None
+        self.rest = ''
         self.type = None
         self.valid = True
         self.errors = []

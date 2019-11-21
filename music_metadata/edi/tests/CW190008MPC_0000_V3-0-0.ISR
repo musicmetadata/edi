@@ -1,0 +1,50 @@
+HDRPBMPC MUSIC PUB ARTISTS                                       2019080218154720190802               3.0000                                                            CW190008MPC_0000_V3-0-0.ISR
+GRHISR0000103.000000000000
+ISR0000000000000000FIRST WORK                                                    MPC000001                 
+WRI0000000000000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000100000000FIRST LOVE                                                    MPC000002                 
+WRI0000000100000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000200000000FIRST CAR                                                     MPC000003                 
+WRI0000000200000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000000200000002W000002  00000000297RIPPER                                       JACK                          A 
+ISR0000000300000000MPC MAIN THEME                                                MPC000004                 
+WRI0000000300000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000400000000MPC RENE                                                      MPC000005     T1234567894U
+WRI0000000400000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000000400000002W000002  00000000297RIPPER                                       JACK                          C 
+ISR0000000500000000MPC DAVE                                                      MPC000006                 
+WRI0000000500000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000600000000MPC MATIJA                                                    MPC000007                 
+WRI0000000600000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000700000000MPC VP SALES                                                  MPC000008                 
+WRI0000000700000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000800000000MPC COO                                                       MPC000009                 
+WRI0000000800000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000000900000000MPC BLONDE WITH SILICONS                                      MPC000010                 
+WRI0000000900000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000001000000000MPC BLONDE IN NAVY                                            MPC000011                 
+WRI0000001000000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000001100000000MPC MARINA                                                    MPC000012                 
+WRI0000001100000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000001100000002W000002  00000000297RIPPER                                       JACK                          C 
+ISR0000001200000000MPC LANA                                                      MPC000013                 
+WRI0000001200000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000001200000002W000002  00000000297RIPPER                                       JACK                          C 
+ISR0000001300000000FIRST TIME                                                    MPC000014                 
+WRI0000001300000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000001300000002W000002  00000000297RIPPER                                       JACK                          A 
+ISR0000001400000000FIRST LOVE                                                    MPC000015                 
+WRI0000001400000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000001400000002W000002  00000000297RIPPER                                       JACK                          A 
+ISR0000001500000000FIRST THING FIRST                                             MPC000016                 
+WRI0000001500000001W000001  00000000199DOE                                          JOHN                          C 
+WRI0000001500000002W000002  00000000297RIPPER                                       JACK                          A 
+ISR0000001600000000USA SPECIAL                                                   MPC000017                 
+WRI0000001600000001W000004  00000001098CARR-TOON                                    CARMEN                        CA
+WRI0000001600000002W000003  00000000983TOONSSON                                     TONY TOONY                    CA
+ISR0000001700000000ASDF                                                          MPC000018                 
+WRI0000001700000001W000001  00000000199DOE                                          JOHN                          CA
+ISR0000001800000000ASDF                                                          MPC000019                 
+WRI0000001800000001W000002  00000000297RIPPER                                       JACK                          CA
+GRT000010000001900000048
+TRL000010000001900000050
