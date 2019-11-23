@@ -1,19 +1,134 @@
 import io
 import re
-from .transaction import EDITransaction
+from .transactions import EdiTransaction
+from .records import *
+from .errors import FileError
+from weakref import ref
 
 
 RE_GROUPS = re.compile(
     r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)', re.M | re.S)
+RE_TRL = re.compile(r'^TRL.*?$', re.M | re.S)
+RE_GRT = re.compile(r'^GRT.*?$', re.M | re.S)
 
 
-class EDIFile(io.TextIOWrapper):
-    encoding = 'latin1'
+class EdiGroup(object):
 
-    def __init__(self, buffer, *args, **kwargs):
-        super().__init__(buffer, *args, **kwargs)
-        self._header = self.get_header()
-        self.reconfigure(encoding=self.get_encoding_from_header())
+    header_class = EdiGRH
+    trailer_class = EdiGRT
+
+    def __init__(self, gtype, lines=None, sequence=None, *args, **kwargs):
+        self.type = gtype
+        self.errors = []
+        self.valid = True
+        self.sequence = sequence
+        self.transaction_count = 0
+        self.record_count = 2
+        if lines:
+            self.lines = lines
+        else:
+            self.lines = ''
+        self.get_header()
+        self.get_trailer()
+
+    def __str__(self):
+        return self.type
+
+    def get_header(self):
+        if hasattr(self, '_header'):
+            return self._header
+        if self.lines:
+            self._header = self.header_class(self.lines.split('\n')[0])
+            if self._header.group_id != self.sequence:
+                e = FileError(
+                    f'Wrong group ID: { self._header.group_id } instead of '
+                    f'{self.sequence}')
+                self._header.error('group_id', e)
+            self.valid &= self._header.valid
+            return self._header
+        return None
+
+    def get_trailer(self):
+        if hasattr(self, '_trailer'):
+            return self._trailer
+        if self.lines:
+            grts = list(re.findall(RE_GRT, self.lines))
+            if len(grts) == 0:
+                raise FileError('Group trailer record (GRT) not found')
+            if len(grts) > 1:
+                raise FileError('Multiple group trailer records (GRT) found')
+            grt = grts[0]
+            self._trailer = EdiGRT(grt)
+            self.valid &= self._trailer.valid
+            if self.sequence != self._trailer.group_id:
+                e = FileError(
+                    f'Wrong group ID: { self._trailer.group_id } instead of'
+                    f'{ self.sequence }')
+                self._trailer.error('group_id', e)
+            return self._trailer
+        return None
+
+    def get_transactions(self, reraise=True):
+        sequence = 0
+        pattern = re.compile(
+            r'(^{0}.*?(?=^GRT|^{0}))'.format(self.type), re.S | re.M)
+        try:
+            for transaction_lines in re.findall(pattern, self.lines):
+                transaction = EdiTransaction(
+                    self.type, transaction_lines, sequence, reraise=reraise)
+                for error in transaction.errors:
+                    if isinstance(error, FileError):
+                        self.valid = False
+                        break
+                yield transaction
+                sequence += 1
+                self.transaction_count += 1
+                self.record_count += len(transaction.records)
+            else:
+                trailer = self.get_trailer()
+                if self.transaction_count != trailer.transaction_count:
+                    self.valid = False
+                    self.get_file().valid = False
+                    e = FileError(
+                        f'Wrong transaction count in GRT: '
+                        f'{ trailer.transaction_count }. counted '
+                        f'{ self.transaction_count }')
+                    trailer.error('transaction_count', e)
+                if self.record_count != trailer.record_count:
+                    self.valid = False
+                    self.get_file().valid = False
+                    e = FileError(
+                        f'Wrong record count in GRT: '
+                        f'{ trailer.record_count }. counted '
+                        f'{ self.record_count }')
+                    trailer.error('record_count', e)
+        except FileError as e:
+            self.valid = False
+            self.errors.append(e)
+            if reraise:
+                raise
+
+    def list_transactions(self):
+        return list(self.get_transactions())
+
+
+class EdiFile(io.TextIOWrapper):
+
+    group_class = EdiGroup
+    header_class = EdiRecord
+    trailer_class = EdiTRL
+
+    def __init__(self, buffer, encoding='latin1', *args, **kwargs):
+        super().__init__(buffer, encoding=encoding, *args, **kwargs)
+        self.valid = True
+        self.file_errors = []
+        self.group_count = 0
+        self.transaction_count = 0
+        self.record_count = 2
+        if not buffer.writable():
+            self.get_header()
+            self.get_trailer()
+            self.reconfigure(encoding=self.get_encoding_from_header())
 
     def __str__(self):
         return self.name
@@ -22,33 +137,76 @@ class EDIFile(io.TextIOWrapper):
         if hasattr(self, '_header'):
             return self._header
         position = self.tell()
-        header = self.readline()
+        self.seek(0)
+        self._header = self.header_class(self.readline())
         self.seek(position)
-        return header
+        return self._header
 
-    def get_groups(self, reraise=True):
-        try:
-            expected_sequence = 0
-            for r in re.finditer(RE_GROUPS, self.read()):
-                expected_sequence += 1
-                d = r.groupdict()
-                sequence = d['sequence']
-                try:
-                    current_sequence = int(sequence)
-                except ValueError:
-                    raise ValueError(
-                        f'Group sequence is not an integer { sequence }.')
-                if current_sequence != expected_sequence:
-                    raise ValueError(
-                        f'Wrong group sequence {current_sequence}, should be '
-                        f'{expected_sequence}')
-                d['sequence'] = current_sequence
-                yield EDIGroup(**d)
-        except ValueError as e:
-            self.valid = False
-            self.errors.append(e)
-            if reraise:
-                raise
+    def get_trailer(self):
+        if hasattr(self, '_trailer'):
+            return self._trailer
+        position = self.tell()
+        self.seek(0)
+        trls = list(re.findall(RE_TRL, self.read()))
+        if len(trls) == 0:
+            raise FileError('File trailer record (TRL) not found')
+        if len(trls) > 1:
+            raise FileError('Multiple trailer records (TRL) found')
+        self.seek(position)
+        trl = trls[0]
+        self._trailer = self.trailer_class(trl)
+        return self._trailer
+
+    def get_groups(self):
+        expected_sequence = 0
+        record_count = 2
+        transaction_count = 0
+        for r in re.finditer(RE_GROUPS, self.read()):
+            expected_sequence += 1
+            d = r.groupdict()
+            group = EdiGroup(d['gtype'], d['lines'], expected_sequence)
+            self.group_count += 1
+            self.valid &= group.valid
+            trailer = group.get_trailer()
+            record_count += trailer.record_count
+            transaction_count += trailer.transaction_count
+            self.valid &= group.valid
+            group.get_file = ref(self)
+            yield group
+        else:
+            if expected_sequence == 0:
+                e = FileError('No valid groups found in the file.')
+                self.valid = False
+                self.file_errors.append(e)
+
+            trailer = self.get_trailer()
+
+            if expected_sequence != trailer.group_count:
+                self.valid = False
+                e = FileError(
+                    'Wrong group count in TRL: '
+                    f'{ trailer.group_count }, '
+                    f'counted { expected_sequence }')
+                trailer.error('group_count', e)
+
+            if transaction_count != trailer.transaction_count:
+                self.valid = False
+                e = FileError(
+                    'Wrong transaction count in TRL: '
+                    f'{ trailer.transaction_count }, '
+                    f'GRTs say { transaction_count }')
+                trailer.error('transaction_count', e)
+
+            if record_count != trailer.record_count:
+                self.valid = False
+                e = FileError(
+                    'Wrong record count in TRL: '
+                    f'{ trailer.record_count }, '
+                    f'GRTs say { record_count }')
+                trailer.error('record_count', e)
+
+    def list_groups(self):
+        return list(self.get_groups())
 
     def get_encoding_from_header(self):
         return 'latin1'
@@ -57,28 +215,3 @@ class EDIFile(io.TextIOWrapper):
         return None
 
 
-class EDIGroup(object):
-    def __init__(self, gtype, lines=None, sequence=None, *args, **kwargs):
-        self.type = gtype
-        self.sequence = sequence
-        self.errors = []
-        self.valid = True
-        if lines:
-            self.lines = lines
-        else:
-            self.lines = ''
-
-    def __str__(self):
-        return self.type
-
-    def get_transactions(self, reraise=True):
-        sequence = 0
-        pattern = re.compile(
-            r'(^{0}.*?(?=^GRT|{0}))'.format(self.type), re.S | re.M)
-        for transaction_lines in re.findall(pattern, self.lines):
-            yield EDITransaction(
-                self.type, transaction_lines, sequence, reraise=reraise)
-            sequence += 1
-
-    def get_transactions_with_errors(self):
-        return self.get_transactions(reraise=False)
