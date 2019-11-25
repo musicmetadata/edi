@@ -1,6 +1,6 @@
 import collections
-from .errors import FileError
 from .fields import *
+
 
 class EdiRecordMeta(type):
     """Meta class for EdiRecord"""
@@ -47,19 +47,37 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
     def __str__(self):
         return self.to_edi()
 
-    def error(self, field, error):
-        self.valid = False
+    def warning(self, field, error):
         if field and field not in self.labels:
             raise AttributeError(f'No such field { field } in { self.labels }')
         self.errors[field] = error
 
+    def error(self, field, error):
+        self.valid = False
+        self.warning(field, error)
+
 
     def split_into_fields(self):
         pos = 0
+        specified_length = 0
+        actual_length = len(self.line)
+        for field in self.fields:
+            specified_length += field._size
+        if specified_length > actual_length:
+            self.line = self.line.ljust(specified_length)
         for label, field in self._fields.items():
             start = pos
             end = pos + field._size
+            pos += field._size
             value = self.line[start:end]
+            if start < actual_length < end:
+                self.warning(label, FieldError('Field truncated'))
+            elif end > actual_length:
+                if field._mandatory:
+                    self.error(label, RecordError('Mandatory field missing'))
+                else:
+                    self.warning(label, FieldError(
+                        'Field missing at the end of the line.'))
             try:
                 setattr(self, label, value)
             except FieldError as e:
@@ -67,7 +85,6 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
             except (RecordError, FileError) as e:
                 self.error(label, e)
                 raise
-            pos += field._size
         else:
             self.rest = self.line[pos:]
 
@@ -87,12 +104,11 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         for label, field in self._fields.items():
             value = getattr(self, label)
             s = field.to_html(
-                value, f'{ label }', None, self.errors.get(label))
+                value, f'{ label }', self.errors.get(label))
             output += s
         else:
             output += EdiField.to_html(
-                None, self.rest, label='', verbose_value='',
-                error=self.errors.get(None))
+                None, self.rest, label='', error=self.errors.get(None))
         output += '</span>'
         return output
 
@@ -115,6 +131,9 @@ class EdiTransactionRecord(EdiRecord):
                 f'{ self.record_sequence_number }, should be '
                 f'{ record_sequence }')
             self.error('record_sequence_number', e)
+
+    def validate(self):
+        pass
 
 
 class EdiTRL(EdiRecord):

@@ -5,7 +5,6 @@ from .records import *
 from .errors import FileError
 from weakref import ref
 
-
 RE_GROUPS = re.compile(
     r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)', re.M | re.S)
 RE_TRL = re.compile(r'^TRL.*?$', re.M | re.S)
@@ -16,6 +15,7 @@ class EdiGroup(object):
 
     header_class = EdiGRH
     trailer_class = EdiGRT
+    transaction_classes = [EdiTransaction]
 
     def __init__(self, gtype, lines=None, sequence=None, *args, **kwargs):
         self.type = gtype
@@ -33,6 +33,9 @@ class EdiGroup(object):
 
     def __str__(self):
         return self.type
+
+    def get_file(self):
+        return None
 
     def get_header(self):
         if hasattr(self, '_header'):
@@ -58,7 +61,7 @@ class EdiGroup(object):
             if len(grts) > 1:
                 raise FileError('Multiple group trailer records (GRT) found')
             grt = grts[0]
-            self._trailer = EdiGRT(grt)
+            self._trailer = self.trailer_class(grt)
             self.valid &= self._trailer.valid
             if self.sequence != self._trailer.group_id:
                 e = FileError(
@@ -68,14 +71,21 @@ class EdiGroup(object):
             return self._trailer
         return None
 
+    def get_transaction_class(self):
+        for transaction_class in self.transaction_classes:
+            if self.type == transaction_class.record_type:
+                return transaction_class
+        return EdiTransaction
+
     def get_transactions(self, reraise=True):
         sequence = 0
         pattern = re.compile(
             r'(^{0}.*?(?=^GRT|^{0}))'.format(self.type), re.S | re.M)
         try:
             for transaction_lines in re.findall(pattern, self.lines):
-                transaction = EdiTransaction(
-                    self.type, transaction_lines, sequence, reraise=reraise)
+                transaction_class = self.get_transaction_class()
+                transaction = transaction_class(
+                    self.type, transaction_lines, sequence)
                 for error in transaction.errors:
                     if isinstance(error, FileError):
                         self.valid = False
@@ -114,18 +124,35 @@ class EdiGroup(object):
 
 class EdiFile(io.TextIOWrapper):
 
-    group_class = EdiGroup
     header_class = EdiRecord
     trailer_class = EdiTRL
+    group_class = EdiGroup
 
-    def __init__(self, buffer, encoding='latin1', *args, **kwargs):
+    @classmethod
+    def is_my_header(cls, hdr):
+        return False
+
+    def __new__(cls, buffer=None, *args, **kwargs):
+        if buffer:
+            hdr = buffer.readline()
+            for child_class in cls.__subclasses__():
+                if child_class.is_my_header(hdr):
+                    return super().__new__(child_class, buffer, *args, **kwargs)
+        return super().__new__(cls, buffer, *args, **kwargs)
+
+    def __init__(self, buffer=None, encoding='latin1', *args, **kwargs):
+        if buffer is None:
+            existing_file = False
+            buffer = io.BytesIO()
+        else:
+            existing_file = True
         super().__init__(buffer, encoding=encoding, *args, **kwargs)
         self.valid = True
         self.file_errors = []
         self.group_count = 0
         self.transaction_count = 0
         self.record_count = 2
-        if not buffer.writable():
+        if existing_file:
             self.get_header()
             self.get_trailer()
             self.reconfigure(encoding=self.get_encoding_from_header())
@@ -164,7 +191,7 @@ class EdiFile(io.TextIOWrapper):
         for r in re.finditer(RE_GROUPS, self.read()):
             expected_sequence += 1
             d = r.groupdict()
-            group = EdiGroup(d['gtype'], d['lines'], expected_sequence)
+            group = self.group_class(d['gtype'], d['lines'], expected_sequence)
             self.group_count += 1
             self.valid &= group.valid
             trailer = group.get_trailer()
@@ -210,8 +237,5 @@ class EdiFile(io.TextIOWrapper):
 
     def get_encoding_from_header(self):
         return 'latin1'
-
-    def get_version_from_header(self):
-        return None
 
 

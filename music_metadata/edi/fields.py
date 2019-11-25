@@ -1,6 +1,7 @@
 from weakref import WeakKeyDictionary
 from .errors import *
 import html
+from collections import OrderedDict
 
 class EdiField(object):
     """Base class for all EDI Fields"""
@@ -16,19 +17,30 @@ class EdiField(object):
         return self
 
     def __set__(self, instance, value):
+        if isinstance(value, str):
+            value = value.strip()
+            if value == '':
+                value = None
+        if value is None and self._mandatory:
+            raise FieldError('Value is mandatory')
         self._valuedict[instance] = value
 
     def to_edi(self, value):
         """Return EDI format."""
+        if value is None:
+            value = ''
         return str(value).ljust(self._size, ' ')
 
-    def to_html(self, value, label='', verbose_value=None, error=None):
+    def verbose(self, value):
+        return value
+
+    def to_html(self, value, label='', error=None):
         """Create HTML representation for EDI, used in syntax highlighting"""
         if self:
             edi_value = self.to_edi(value)
+            verbose_value = self.verbose(value)
         else:
             edi_value = value
-        if verbose_value is None:
             verbose_value = value
         descriptive_label = label.replace('_', ' ')
         if error:
@@ -45,19 +57,20 @@ class EdiField(object):
 
 class EdiNumericField(EdiField):
     def __set__(self, instance, value):
-        try:
-            value = int(value)
-        except ValueError:
-            raise RecordError(
-                f'Value "{ value }" is not numeric')
-        if not 0 <= value < 10 ** self._size:
-            raise FieldError(
-                f'Not between 0 "{ value }" and "{ 10 ** self._size - 1 }"')
+        if value is not None:
+            try:
+                value = int(value)
+            except ValueError:
+                raise RecordError(
+                    f'Value "{ value }" is not numeric')
+            if not 0 <= value < 10 ** self._size:
+                raise FieldError(
+                    f'Not between 0 "{ value }" and "{ 10 ** self._size - 1 }"')
         super().__set__(instance, value)
 
     def to_edi(self, value):
         """Return EDI format."""
-        return str(value).rjust(self._size, '0')
+        return str(value or 0).rjust(self._size, '0')
 
 
 class EdiConstantField(EdiField):
@@ -73,10 +86,53 @@ class EdiConstantField(EdiField):
 
     def __set__(self, instance, value):
         if value != self._constant:
+            super().__set__(instance, value)
             raise FieldError(
                 f'Value must be "{ self._constant }", not "{ value }"')
         super().__set__(instance, value)
 
-    def __get__(self, instance, owner=None):
-        return self._constant
+
+class EdiListField(EdiField):
+    def __init__(self, size, choices, *args, **kwargs):
+        self._choices = OrderedDict(choices)
+        super().__init__(size, *args, **kwargs)
+
+    def __set__(self, instance, value):
+        if isinstance(value, str):
+            value = value.strip()
+        if value and value not in self._choices.keys():
+            super().__set__(instance, value)
+            raise FieldError(
+                'Value must be one of ' 
+                f'''\"{ '", "'.join(self._choices.keys()) }\"''')
+        super().__set__(instance, value)
+
+    def verbose(self, value):
+        return self._choices.get(value) or value
+
+
+class EdiFlagField(EdiListField):
+    def __init__(self, *args, **kwargs):
+        size = 1
+        choices = (('Y', 'Yes'), ('N', 'No'), ('U', 'Unknown'))
+        super().__init__(size=size, choices=choices, *args, **kwargs)
+
+
+class EdiBooleanField(EdiListField):
+    def __init__(self, *args, **kwargs):
+        size = 1
+        choices = ((True, 'Yes'), (False, 'No'))
+        super().__init__(size=size, choices=choices, *args, **kwargs)
+
+    def __set__(self, instance, value):
+        value = dict(
+            (('Y', True), ('N', False), (' ', None))
+        ).get(value, value)
+        super().__set__(instance, value)
+
+    def to_edi(self, value):
+        value = dict(
+            ((True, 'Y'), (False, 'N'), (None, ' '))
+        ).get(value, ' ')
+        return value
 
