@@ -102,8 +102,7 @@ class TestEdi(unittest.TestCase):
         """
         Test EDI generation.
         """
-        f = BytesIO(b'')
-        EdiFile(f)
+        EdiFile()
         EdiGroup(gtype='WRK')
         t = EdiTransaction(gtype='WRK')
         r = EdiTransactionRecord()
@@ -114,4 +113,3 @@ class TestEdi(unittest.TestCase):
         r.record_sequence_number = 0
         self.assertEqual(r.to_edi(), 'WRK0000000000000000')
         self.assertEqual(str(r), 'WRK0000000000000000')
-        self.assertEqual(len(r.fields), len(r.labels))

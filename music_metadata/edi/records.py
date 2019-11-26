@@ -48,24 +48,26 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         return self.to_edi()
 
     def warning(self, field, error):
+        """Add an error, do not invalidate."""
         if field and field not in self.labels:
             raise AttributeError(f'No such field { field } in { self.labels }')
         self.errors[field] = error
 
     def error(self, field, error):
+        """Add an error and invalidate."""
         self.valid = False
         self.warning(field, error)
 
-
     def split_into_fields(self):
+        """Split a record into fields, extend with blanks if truncated."""
         pos = 0
         specified_length = 0
         actual_length = len(self.line)
-        for field in self.fields:
+        for field in self.get_fields().values():
             specified_length += field._size
         if specified_length > actual_length:
             self.line = self.line.ljust(specified_length)
-        for label, field in self._fields.items():
+        for label, field in self.get_fields().items():
             start = pos
             end = pos + field._size
             pos += field._size
@@ -88,14 +90,18 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         else:
             self.rest = self.line[pos:]
 
+    def get_fields(self):
+        return self._fields
+
     @property
     def fields(self):
-        return self._fields.values()
+        return self.get_fields().values()
 
     @property
     def labels(self):
-        return self._fields.keys()
+        return self.get_fields().keys()
 
+    @property
     def to_html(self):
         classes = f'record { self.type }'
         if not self.valid:
@@ -133,10 +139,12 @@ class EdiTransactionRecord(EdiRecord):
             self.error('record_sequence_number', e)
 
     def validate(self):
+        """Validate the record, needed for subclasses."""
         pass
 
 
 class EdiTRL(EdiRecord):
+    """File trailer, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='TRL', mandatory=True)
     group_count = EdiNumericField(size=5, mandatory=True)
     transaction_count = EdiNumericField(size=8, mandatory=True)
@@ -144,12 +152,14 @@ class EdiTRL(EdiRecord):
 
 
 class EdiGRH(EdiRecord):
+    """Group header, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='GRH', mandatory=True)
     transaction_type = EdiField(size=3, mandatory=True)
     group_id = EdiNumericField(size=5, mandatory=True)
 
 
 class EdiGRT(EdiRecord):
+    """Group trailer, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='GRT', mandatory=True)
     group_id = EdiNumericField(size=5, mandatory=True)
     transaction_count = EdiNumericField(size=8, mandatory=True)

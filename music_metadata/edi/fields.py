@@ -32,6 +32,7 @@ class EdiField(object):
         return str(value).ljust(self._size, ' ')
 
     def verbose(self, value):
+        """REturn verbose (human-readable) value"""
         return value
 
     def to_html(self, value, label='', error=None):
@@ -65,7 +66,8 @@ class EdiNumericField(EdiField):
                     f'Value "{ value }" is not numeric')
             if not 0 <= value < 10 ** self._size:
                 raise FieldError(
-                    f'Not between 0 "{ value }" and "{ 10 ** self._size - 1 }"')
+                    f'Not between 0 "{ value }" and "{ 10 ** self._size - 1 }"'
+                )
         super().__set__(instance, value)
 
     def to_edi(self, value):
@@ -116,6 +118,18 @@ class EdiFlagField(EdiListField):
         size = 1
         choices = (('Y', 'Yes'), ('N', 'No'), ('U', 'Unknown'))
         super().__init__(size=size, choices=choices, *args, **kwargs)
+
+    def __set__(self, instance, value):
+        value = dict(
+            (('Y', True), ('N', False), ('U', None), (' ', None))
+        ).get(value, value)
+        super().__set__(instance, value)
+
+    def to_edi(self, value):
+        value = dict((
+            (True, 'Y'), (False, 'N'), (None, 'U' if self._mandatory else ' ')
+        )).get(value, ' ')
+        return value
 
 
 class EdiBooleanField(EdiListField):
