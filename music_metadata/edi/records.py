@@ -103,7 +103,6 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
     def labels(self):
         return self.get_fields().keys()
 
-    @property
     def to_html(self):
         classes = f'record { self.type }'
         if not self.valid:
