@@ -5,6 +5,7 @@ from .records import *
 from .errors import FileError
 from weakref import ref
 
+
 RE_GROUPS = re.compile(
     r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)', re.M | re.S)
 RE_TRL = re.compile(r'^TRL.*?$', re.M | re.S)

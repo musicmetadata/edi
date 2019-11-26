@@ -9,6 +9,9 @@ class FileError(ValueError):
 # class FieldError(ValueError):
 #     pass
 
+class FieldWarning(ValueError):
+    pass
+
 class FieldError(ValueError):
     pass
 

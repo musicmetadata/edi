@@ -3,6 +3,7 @@ from .errors import *
 import html
 from collections import OrderedDict
 
+
 class EdiField(object):
     """Base class for all EDI Fields"""
 
@@ -89,7 +90,7 @@ class EdiConstantField(EdiField):
     def __set__(self, instance, value):
         if value != self._constant:
             super().__set__(instance, value)
-            raise FieldError(
+            raise FieldWarning(
                 f'Value must be "{ self._constant }", not "{ value }"')
         super().__set__(instance, value)
 
@@ -116,10 +117,14 @@ class EdiListField(EdiField):
 class EdiFlagField(EdiListField):
     def __init__(self, *args, **kwargs):
         size = 1
-        choices = (('Y', 'Yes'), ('N', 'No'), ('U', 'Unknown'))
+        choices = ((True, 'Yes'), (False, 'No'), (None, 'Unknown'))
         super().__init__(size=size, choices=choices, *args, **kwargs)
 
     def __set__(self, instance, value):
+        if self._mandatory and value == 'U':
+            # Unknown resolves to None, so super() makes no sense
+            self._valuedict[instance] = None
+            return
         value = dict(
             (('Y', True), ('N', False), ('U', None), (' ', None))
         ).get(value, value)

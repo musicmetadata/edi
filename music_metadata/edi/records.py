@@ -82,6 +82,8 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
                         'Field missing at the end of the line.'))
             try:
                 setattr(self, label, value)
+            except FieldWarning as e:
+                self.warning(label, e)
             except FieldError as e:
                 self.error(label, e)
             except (RecordError, FileError) as e:
