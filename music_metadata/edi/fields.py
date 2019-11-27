@@ -45,15 +45,18 @@ class EdiField(object):
             edi_value = value
             verbose_value = value
         descriptive_label = label.replace('_', ' ')
+        classes = self.__class__.__name__ + ' '
+        classes += ' '.join(c.__name__ for c in self.__class__.__bases__)
+        classes = classes.lower()
         if error:
             error = html.escape(str(error))
             return (
-                f'<span class="field { label } invalid" '
+                f'<span class="field { classes } { label } invalid" '
                 f'title ="{ descriptive_label }: { verbose_value }\n'
                 f'ERROR: { error }">{ edi_value }</span>')
         else:
             return (
-                f'<span class="field { label }" title ="{ descriptive_label }:'
+                f'<span class="field { classes } { label }" title ="{ descriptive_label }:'
                 f' { verbose_value }">{ edi_value }</span>')
 
 

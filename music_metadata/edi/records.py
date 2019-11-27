@@ -104,7 +104,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         return self.get_fields().keys()
 
     def to_html(self):
-        classes = f'record { self.type }'
+        classes = f'record { self.type.lower() }'
         if not self.valid:
             classes += ' invalid'
         output = f'<span class="{ classes }">'
