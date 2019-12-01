@@ -119,6 +119,8 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         output += '</span>'
         return output
 
+    def to_dict(self):
+        return {}
 
 class EdiTransactionRecord(EdiRecord):
     transaction_sequence_number = EdiNumericField(size=8)
@@ -143,6 +145,20 @@ class EdiTransactionRecord(EdiRecord):
         """Validate the record, needed for subclasses."""
         pass
 
+    def to_dict(self):
+        d = OrderedDict()
+        for label, field in self.get_fields().items():
+            if label in ['record_type',
+                    'transaction_sequence_number',
+                    'record_sequence_number']:
+                continue
+            if isinstance(field, EdiConstantField):
+                continue
+            f = field.to_dict(self, label)
+            if f is not None:
+                d[label] = f
+        return d
+
 
 class EdiTRL(EdiRecord):
     """File trailer, minimal requirements."""
@@ -156,12 +172,12 @@ class EdiGRH(EdiRecord):
     """Group header, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='GRH', mandatory=True)
     transaction_type = EdiField(size=3, mandatory=True)
-    group_id = EdiNumericField(size=5, mandatory=True)
+    group_code = EdiNumericField(size=5, mandatory=True)
 
 
 class EdiGRT(EdiRecord):
     """Group trailer, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='GRT', mandatory=True)
-    group_id = EdiNumericField(size=5, mandatory=True)
+    group_code = EdiNumericField(size=5, mandatory=True)
     transaction_count = EdiNumericField(size=8, mandatory=True)
     record_count = EdiNumericField(size=8, mandatory=True)

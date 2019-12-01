@@ -43,10 +43,11 @@ class EdiGroup(object):
             return self._header
         if self.lines:
             self._header = self.header_class(self.lines.split('\n')[0])
-            if self._header.group_id != self.sequence:
+            if self._header.group_code != self.sequence:
                 e = FileError(
-                    f'Wrong group ID: { self._header.group_id } instead of '
+                    f'Wrong group ID: { self._header.group_code } instead of '
                     f'{self.sequence}')
+                self.errors.append(e)
                 self._header.error('group_id', e)
             self.valid &= self._header.valid
             return self._header
@@ -64,10 +65,11 @@ class EdiGroup(object):
             grt = grts[0]
             self._trailer = self.trailer_class(grt)
             self.valid &= self._trailer.valid
-            if self.sequence != self._trailer.group_id:
+            if self.sequence != self._trailer.group_code:
                 e = FileError(
-                    f'Wrong group ID: { self._trailer.group_id } instead of'
+                    f'Wrong group ID: { self._trailer.group_code } instead of'
                     f'{ self.sequence }')
+                self.errors.append(e)
                 self._trailer.error('group_id', e)
             return self._trailer
         return None
@@ -78,7 +80,7 @@ class EdiGroup(object):
                 return transaction_class
         return EdiTransaction
 
-    def get_transactions(self, reraise=True):
+    def get_transactions(self):
         sequence = 0
         pattern = re.compile(
             r'(^{0}.*?(?=^GRT|^{0}))'.format(self.type), re.S | re.M)
@@ -90,6 +92,7 @@ class EdiGroup(object):
                 for error in transaction.errors:
                     if isinstance(error, FileError):
                         self.valid = False
+                        self.errors.append(error)
                         break
                 yield transaction
                 sequence += 1
@@ -102,22 +105,23 @@ class EdiGroup(object):
                     self.get_file().valid = False
                     e = FileError(
                         f'Wrong transaction count in GRT: '
-                        f'{ trailer.transaction_count }. counted '
+                        f'{ trailer.transaction_count }, counted '
                         f'{ self.transaction_count }')
+                    self.errors.append(e)
                     trailer.error('transaction_count', e)
                 if self.record_count != trailer.record_count:
                     self.valid = False
                     self.get_file().valid = False
                     e = FileError(
                         f'Wrong record count in GRT: '
-                        f'{ trailer.record_count }. counted '
+                        f'{ trailer.record_count }, counted '
                         f'{ self.record_count }')
+                    self.errors.append(e)
                     trailer.error('record_count', e)
         except FileError as e:
             self.valid = False
             self.errors.append(e)
-            if reraise:
-                raise
+            raise
 
     def list_transactions(self):
         return list(self.get_transactions())
@@ -215,22 +219,27 @@ class EdiFile(io.TextIOWrapper):
                     'Wrong group count in TRL: '
                     f'{ trailer.group_count }, '
                     f'counted { expected_sequence }')
+                self.file_errors.append(e)
                 trailer.error('group_count', e)
 
+            self.transaction_count = transaction_count
             if transaction_count != trailer.transaction_count:
                 self.valid = False
                 e = FileError(
                     'Wrong transaction count in TRL: '
                     f'{ trailer.transaction_count }, '
                     f'GRTs say { transaction_count }')
+                self.file_errors.append(e)
                 trailer.error('transaction_count', e)
 
+            self.record_count = record_count
             if record_count != trailer.record_count:
                 self.valid = False
                 e = FileError(
                     'Wrong record count in TRL: '
                     f'{ trailer.record_count }, '
                     f'GRTs say { record_count }')
+                self.file_errors.append(e)
                 trailer.error('record_count', e)
 
     def list_groups(self):
@@ -239,4 +248,5 @@ class EdiFile(io.TextIOWrapper):
     def get_encoding_from_header(self):
         return 'latin1'
 
-
+    def to_dict(self):
+        raise Exception('CWR not loaded!')

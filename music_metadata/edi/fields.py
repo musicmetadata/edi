@@ -33,7 +33,7 @@ class EdiField(object):
         return str(value).ljust(self._size, ' ')
 
     def verbose(self, value):
-        """REturn verbose (human-readable) value"""
+        """Return verbose (human-readable) value"""
         return value
 
     def to_html(self, value, label='', error=None):
@@ -58,6 +58,18 @@ class EdiField(object):
             return (
                 f'<span class="field { classes } { label }" title ="{ descriptive_label }:'
                 f' { verbose_value }">{ edi_value }</span>')
+
+    def to_dict(self, record, label):
+        value = getattr(record, label)
+        valid = record.valid or label not in record.errors
+        if value is None and valid:
+            return None
+        d = OrderedDict()
+        d['valid'] = valid
+        if not valid:
+            d['error'] = str(record.errors.get(label))
+        d['value'] = value
+        return d
 
 
 class EdiNumericField(EdiField):
@@ -115,6 +127,19 @@ class EdiListField(EdiField):
 
     def verbose(self, value):
         return self._choices.get(value) or value
+
+
+    def to_dict(self, record, label):
+        d = super().to_dict(record, label)
+        if d is None:
+            return None
+        value = d.get('value')
+        code = self.to_edi(value).strip()
+        if value != code:
+            d['code'] = code
+        name = self.verbose(value)
+        d['verbose_value'] = name
+        return d
 
 
 class EdiFlagField(EdiListField):
