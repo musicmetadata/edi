@@ -97,7 +97,8 @@ class EdiConstantField(EdiField):
             if len(constant) == size:
                 self._constant = constant
             else:
-                f'Value "{ value }" is not { size } characters long.'
+                raise AttributeError(
+                    f'Value "{ value }" is not { size } characters long.')
         else:
             self._constant = ' ' * size
         super().__init__(size, *args, **kwargs)
