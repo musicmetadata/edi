@@ -51,3 +51,6 @@ class EdiTransaction(object):
             record.validate()
             self.valid &= record.valid
             yield record
+
+    def to_dict(self, verbosity=1):
+        return {'error': 'Not implemented for this file type.'}

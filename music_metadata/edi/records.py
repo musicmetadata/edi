@@ -132,8 +132,8 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         output += '</span>'
         return output
 
-    def to_dict(self):
-        return {}
+    def to_dict(self, verbosity=1):
+        return {'error': 'Not implemented for this record type.'}
 
 
 class EdiTransactionRecord(EdiRecord):

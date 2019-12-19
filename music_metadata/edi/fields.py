@@ -16,7 +16,7 @@ class EdiField(object):
 
     Alphanumeric fields are left-aligned, space-padded and default is blank."""
 
-    verbose_type = 'Alphanumeric'
+    verbose_type = 'Alphanumeric field'
 
     def __init__(self, size, mandatory=None, *args, **kwargs):
         self._size = size
@@ -77,13 +77,13 @@ class EdiField(object):
         valid = record.valid or label not in record.errors
         if value is None and valid and verbosity <= 1:
             return None
-        if value and valid and verbosity == 0:
+        if value is not None and valid and verbosity == 0:
             return value
         d = OrderedDict()
         if verbosity > 1:
-            d['type'] = self.verbose_type
+            d['field_type'] = self.verbose_type
         d['valid'] = valid
-        if not valid:
+        if not valid or verbosity > 1:
             d['error'] = str(record.errors.get(label))
         d['value'] = value
         return d
@@ -158,11 +158,10 @@ class EdiListField(EdiField):
 
     def to_dict(self, record, label=None, verbosity=1):
         d = super().to_dict(record, label, verbosity)
-        if d is not isinstance(d, dict):
+        if not isinstance(d, dict):
             return d
         value = d.get('value')
-        name = self.verbose(value)
-        d['verbose_value'] = name
+        d['verbose_value'] = self.verbose(value)
         return d
 
 
