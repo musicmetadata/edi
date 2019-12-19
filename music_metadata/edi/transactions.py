@@ -38,8 +38,8 @@ class EdiTransaction(object):
         for expected_r_sequence, line in enumerate(
                 self.lines.strip('\n').split('\n')):
             try:
-                record = self.get_record_class(line[0:3])(line,
-                                                          expected_r_sequence)
+                record = self.get_record_class(line[0:3])(
+                    line, expected_r_sequence)
             except (RecordError, FileError) as e:
                 record = EdiRecord(line, expected_r_sequence)
                 record.error(None, e)
@@ -50,6 +50,9 @@ class EdiTransaction(object):
             record.validate_sequences(expected_t_sequence, expected_r_sequence)
             record.validate()
             self.valid &= record.valid
+            for error in record.errors.values():
+                if isinstance(error, FileError):
+                    self.errors.append(error)
             yield record
 
     def to_dict(self, verbosity=1):
