@@ -82,6 +82,7 @@ class EdiField(object):
         d = OrderedDict()
         if verbosity > 1:
             d['field_type'] = self.verbose_type
+            d['field_mandatory'] = self._mandatory
         d['valid'] = valid
         if not valid or verbosity > 1:
             d['error'] = str(record.errors.get(label))
