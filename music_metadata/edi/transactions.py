@@ -1,7 +1,16 @@
+"""
+Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
+most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+
+This file contains the transaction skeleton."""
+
+
 from .errors import RecordError, FileError
 from .records import EdiRecord, EdiTransactionRecord
 
+
 class EdiTransaction(object):
+    """Base class for all transactions."""
     
     record_type = None
     record_classes = {}

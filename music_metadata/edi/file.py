@@ -1,3 +1,10 @@
+"""
+Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
+most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+
+This file contains the file and group handling."""
+
+
 import io
 import re
 from .transactions import EdiTransaction

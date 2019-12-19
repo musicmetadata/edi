@@ -1,10 +1,17 @@
+"""
+Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
+most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+
+This file contains record definitions."""
+
+
 import collections
 from .fields import *
 
 
 class EdiRecordMeta(type):
     """Meta class for EdiRecord"""
-    def __new__(cls, name, bases, classdict):
+    def __new__(mcs, name, bases, classdict):
         classdict['_fields'] = collections.OrderedDict()
         for base in bases:
             if hasattr(base, '_fields'):
@@ -12,12 +19,13 @@ class EdiRecordMeta(type):
         for label, field in classdict.items():
             if isinstance(field, EdiField):
                 classdict['_fields'][label] = field
-        return super().__new__(cls, name, bases, classdict)
+        return super().__new__(mcs, name, bases, classdict)
 
 
 class EdiRecord(object, metaclass=EdiRecordMeta):
+    """Base class for all records."""
 
-    record_type = EdiField(size=3)
+    record_type = EdiField(size=3, mandatory=True)
 
     def __init__(self, line=None, sequence=None):
         super().__init__()
@@ -26,7 +34,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         self.rest = ''
         self.type = None
         self.valid = True
-        self.errors = {}
+        self.errors = collections.OrderedDict()
         if self.line:
             if len(self.line) > 3:
                 self.split_into_fields()
@@ -63,10 +71,13 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         pos = 0
         specified_length = 0
         actual_length = len(self.line)
+
+        # Add blanks at the end if missing
         for field in self.get_fields().values():
             specified_length += field._size
         if specified_length > actual_length:
             self.line = self.line.ljust(specified_length)
+
         for label, field in self.get_fields().items():
             start = pos
             end = pos + field._size
@@ -108,10 +119,10 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         if not self.valid:
             classes += ' invalid'
         output = f'<span class="{ classes }">'
-        for label, field in self._fields.items():
-            value = getattr(self, label)
+        for field in self.fields:
+            value = getattr(self, field._name)
             s = field.to_html(
-                value, f'{ label }', self.errors.get(label))
+                value, f'{ field._name }', self.errors.get(field._name))
             output += s
         else:
             output += EdiField.to_html(
@@ -122,11 +133,16 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
     def to_dict(self):
         return {}
 
+
 class EdiTransactionRecord(EdiRecord):
+    """Most of the records are parts of transactions."""
+
     transaction_sequence_number = EdiNumericField(size=8)
     record_sequence_number = EdiNumericField(size=8)
 
     def validate_sequences(self, transaction_sequence, record_sequence):
+        """This is really a file-level validation."""
+
         if self.transaction_sequence_number != transaction_sequence:
             e = FileError(
                 f'Wrong transaction sequence '
@@ -145,17 +161,22 @@ class EdiTransactionRecord(EdiRecord):
         """Validate the record, needed for subclasses."""
         pass
 
-    def to_dict(self):
+    def to_dict(self, verbosity=1):
         d = OrderedDict()
         for label, field in self.get_fields().items():
+
+            # first three fields can be skipped
             if label in ['record_type',
                     'transaction_sequence_number',
                     'record_sequence_number']:
                 continue
+
+            # constant fields can be skipper as well
             if isinstance(field, EdiConstantField):
                 continue
-            f = field.to_dict(self, label)
-            if f is not None:
+
+            f = field.to_dict(self, label, verbosity)
+            if f is not None or verbosity > 1:
                 d[label] = f
         return d
 

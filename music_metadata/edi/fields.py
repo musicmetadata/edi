@@ -1,3 +1,10 @@
+"""
+Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
+most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+
+This file contains field descriptors."""
+
+
 from weakref import WeakKeyDictionary
 from .errors import *
 import html
@@ -5,16 +12,22 @@ from collections import OrderedDict
 
 
 class EdiField(object):
-    """Base class for all EDI Fields"""
+    """Base class for all EDI Fields, also used for alphanumeric fields.
+
+    Alphanumeric fields are left-aligned, space-padded and default is blank."""
+
+    verbose_type = 'Alphanumeric'
 
     def __init__(self, size, mandatory=None, *args, **kwargs):
-        self._valuedict = WeakKeyDictionary()
         self._size = size
         self._mandatory = mandatory
 
+    def __set_name__(self, owner, name):
+        self._name = name
+
     def __get__(self, instance, owner=None):
         if instance:
-            return self._valuedict.get(instance)
+            return getattr(self, self._name)
         return self
 
     def __set__(self, instance, value):
@@ -24,7 +37,7 @@ class EdiField(object):
                 value = None
         if value is None and self._mandatory:
             raise FieldError('Value is mandatory')
-        self._valuedict[instance] = value
+        setattr(self, self._name, value)
 
     def to_edi(self, value):
         """Return EDI format."""
@@ -59,12 +72,19 @@ class EdiField(object):
                 f'<span class="field { classes } { label }" title ="{ descriptive_label }:'
                 f' { verbose_value }">{ edi_value }</span>')
 
-    def to_dict(self, record, label):
+    def to_dict(self, record, label=None, verbosity=1):
+        """Create the dictionary with the value and additional data."""
+        if label is None:
+            label = self._name
         value = getattr(record, label)
         valid = record.valid or label not in record.errors
-        if value is None and valid:
+        if value is None and valid and verbosity <= 1:
             return None
+        if value and valid and verbosity == 0:
+            return value
         d = OrderedDict()
+        if verbosity > 1:
+            d['type'] = self.verbose_type
         d['valid'] = valid
         if not valid:
             d['error'] = str(record.errors.get(label))
@@ -73,6 +93,10 @@ class EdiField(object):
 
 
 class EdiNumericField(EdiField):
+    """Numeric fields are right-aligned, zero-padded and default is filled with zeros."""
+
+    verbose_type = 'Numeric field'
+
     def __set__(self, instance, value):
         if value is not None:
             try:
@@ -92,6 +116,10 @@ class EdiNumericField(EdiField):
 
 
 class EdiConstantField(EdiField):
+    """Constant fields have a preset value.
+
+    If value is specified, it must match the length of the field."""
+
     def __init__(self, size, constant=None, *args, **kwargs):
         if constant:
             if len(constant) == size:
@@ -112,6 +140,10 @@ class EdiConstantField(EdiField):
 
 
 class EdiListField(EdiField):
+    """List field is basically an immutable key-value list with short keys."""
+
+    verbose_type = 'List field'
+
     def __init__(self, size, choices, *args, **kwargs):
         self._choices = OrderedDict(choices)
         super().__init__(size, *args, **kwargs)
@@ -129,21 +161,21 @@ class EdiListField(EdiField):
     def verbose(self, value):
         return self._choices.get(value) or value
 
-
-    def to_dict(self, record, label):
-        d = super().to_dict(record, label)
-        if d is None:
-            return None
+    def to_dict(self, record, label=None, verbosity=1):
+        d = super().to_dict(record, label, verbosity)
+        if d is not isinstance(d, dict):
+            return d
         value = d.get('value')
-        code = self.to_edi(value).strip()
-        if value != code:
-            d['code'] = code
         name = self.verbose(value)
         d['verbose_value'] = name
         return d
 
 
 class EdiFlagField(EdiListField):
+    """Flag field is basically a null-boolean."""
+
+    verbose_type = 'Flag field'
+
     def __init__(self, *args, **kwargs):
         size = 1
         choices = ((True, 'Yes'), (False, 'No'), (None, 'Unknown'))
@@ -167,6 +199,10 @@ class EdiFlagField(EdiListField):
 
 
 class EdiBooleanField(EdiListField):
+    """Boolean field."""
+
+    verbose_type = 'Boolean field'
+
     def __init__(self, *args, **kwargs):
         size = 1
         choices = ((True, 'Yes'), (False, 'No'))

@@ -5,8 +5,8 @@
 ![GitHub](https://img.shields.io/github/license/musicmetadata/edi)
 ![PyPI](https://img.shields.io/pypi/v/music-metadata-edi)
 
-Music Metadata - EDI is a base library for several formats by CISAC, most 
-notably Common Works Registration (CWR) and Common Royalty Distributon (CRD).
+Music Metadata - EDI is a base library for several EDI-based formats by CISAC, most 
+notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
 
 This library features common (abstract) functionality. Libraries for concrete
 formats are under development.
