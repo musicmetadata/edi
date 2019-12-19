@@ -48,7 +48,7 @@ class EdiField(object):
     def verbose(self, value):
         """Return verbose (human-readable) value"""
         return value
-s
+
     def to_html(self, value, label='', error=None):
         """Create HTML representation for EDI, used in syntax highlighting"""
         if self:
