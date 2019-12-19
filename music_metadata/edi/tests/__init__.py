@@ -1,10 +1,9 @@
-import unittest
-from music_metadata.edi.file import EdiFile, EdiGroup
-from music_metadata.edi.transactions import EdiTransaction
-from music_metadata.edi.records import *
 import os
-from io import BytesIO
+import unittest
 
+from music_metadata.edi.file import EdiFile, EdiGroup
+from music_metadata.edi.records import *
+from music_metadata.edi.transactions import EdiTransaction
 
 FOLDER_PATH = os.path.dirname(os.path.realpath(__file__))
 CWR2_PATH = os.path.join(FOLDER_PATH, 'CW190001MPC_000.V21')
@@ -24,8 +23,8 @@ class TestEdi(unittest.TestCase):
                 self.assertEqual(record.type, 'SPT')
                 self.assertEqual(record.sequence, 2)
                 self.assertIn('record_sequence_number', record.errors)
-                self.assertIn('22', str(record.errors.get(
-                    'record_sequence_number')))
+                self.assertIn('22',
+                              str(record.errors.get('record_sequence_number')))
                 self.assertIn('invalid', record.to_html())
 
     def transaction_1(self, transaction):
@@ -34,8 +33,8 @@ class TestEdi(unittest.TestCase):
             self.assertEqual(record.sequence, i)
             if i == 1 and not record.valid:
                 self.assertEqual(record.type, '   ')
-                self.assertIn('mandatory', str(record.errors.get(
-                    'record_type')))
+                self.assertIn('mandatory',
+                              str(record.errors.get('record_type')))
             elif not record.valid:
                 self.assertEqual(record.type, 'SPT')
                 self.assertEqual(record.sequence, 2)
@@ -53,8 +52,8 @@ class TestEdi(unittest.TestCase):
                         self.assertIn('error', d)
                 self.assertEqual(record.type, 'NWR')
                 self.assertEqual(record.sequence, 0)
-                self.assertIn(' 33', str(record.errors.get(
-                    'transaction_sequence_number')))
+                self.assertIn(' 33', str(
+                    record.errors.get('transaction_sequence_number')))
 
     def transaction_3(self, transaction):
         self.assertFalse(transaction.valid)

@@ -1,16 +1,18 @@
 """
 Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
-most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+most notably Common Works Registration (CWR) and Common Royalty Distribution
+(CRD).
 
 This file contains record definitions."""
 
-
 import collections
+
 from .fields import *
 
 
 class EdiRecordMeta(type):
     """Meta class for EdiRecord"""
+
     def __new__(mcs, name, bases, classdict):
         classdict['_fields'] = collections.OrderedDict()
         for base in bases:
@@ -40,7 +42,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
                 self.split_into_fields()
                 self.type = line[0:3]
             else:
-                raise FileError(f'Record too short: { line }')
+                raise FileError(f'Record too short: {line}')
 
     def to_edi(self):
         output = ''
@@ -58,7 +60,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
     def warning(self, field, error):
         """Add an error, do not invalidate."""
         if field and field not in self.labels:
-            raise AttributeError(f'No such field { field } in { self.labels }')
+            raise AttributeError(f'No such field {field} in {self.labels}')
         self.errors[field] = error
 
     def error(self, field, error):
@@ -115,18 +117,18 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         return self.get_fields().keys()
 
     def to_html(self):
-        classes = f'record { self.type.lower() }'
+        classes = f'record {self.type.lower()}'
         if not self.valid:
             classes += ' invalid'
-        output = f'<span class="{ classes }">'
+        output = f'<span class="{classes}">'
         for field in self.fields:
             value = getattr(self, field._name)
-            s = field.to_html(
-                value, f'{ field._name }', self.errors.get(field._name))
+            s = field.to_html(value, f'{field._name}',
+                self.errors.get(field._name))
             output += s
         else:
-            output += EdiField.to_html(
-                None, self.rest, label='', error=self.errors.get(None))
+            output += EdiField.to_html(None, self.rest, label='',
+                error=self.errors.get(None))
         output += '</span>'
         return output
 
@@ -144,17 +146,15 @@ class EdiTransactionRecord(EdiRecord):
         """This is really a file-level validation."""
 
         if self.transaction_sequence_number != transaction_sequence:
-            e = FileError(
-                f'Wrong transaction sequence '
-                f'{ self.transaction_sequence_number }, should be '
-                f'{ transaction_sequence }')
+            e = FileError(f'Wrong transaction sequence '
+                          f'{self.transaction_sequence_number}, should be '
+                          f'{transaction_sequence}')
             self.error('transaction_sequence_number', e)
 
         if self.record_sequence_number != record_sequence:
-            e = FileError(
-                f'Wrong transaction sequence '
-                f'{ self.record_sequence_number }, should be '
-                f'{ record_sequence }')
+            e = FileError(f'Wrong transaction sequence '
+                          f'{self.record_sequence_number}, should be '
+                          f'{record_sequence}')
             self.error('record_sequence_number', e)
 
     def validate(self):
@@ -166,9 +166,8 @@ class EdiTransactionRecord(EdiRecord):
         for label, field in self.get_fields().items():
 
             # first three fields can be skipped
-            if label in ['record_type',
-                    'transaction_sequence_number',
-                    'record_sequence_number']:
+            if label in ['record_type', 'transaction_sequence_number',
+                         'record_sequence_number']:
                 continue
 
             # constant fields can be skipper as well

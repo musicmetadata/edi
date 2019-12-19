@@ -1,26 +1,25 @@
 """
 Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
-most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+most notably Common Works Registration (CWR) and Common Royalty Distribution
+(CRD).
 
 This file contains the file and group handling."""
 
-
 import io
 import re
-from .transactions import EdiTransaction
-from .records import *
-from .errors import FileError
 from weakref import ref
 
+from .records import *
+from .transactions import EdiTransaction
 
 RE_GROUPS = re.compile(
-    r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)', re.M | re.S)
+    r'(?P<lines>^GRH(?P<gtype>.{3})(?P<sequence>\d{5}).*?^GRT(\3).*?$)',
+    re.M | re.S)
 RE_TRL = re.compile(r'^TRL.*?$', re.M | re.S)
 RE_GRT = re.compile(r'^GRT.*?$', re.M | re.S)
 
 
 class EdiGroup(object):
-
     header_class = EdiGRH
     trailer_class = EdiGRT
     transaction_classes = [EdiTransaction]
@@ -52,7 +51,7 @@ class EdiGroup(object):
             self._header = self.header_class(self.lines.split('\n')[0])
             if self._header.group_code != self.sequence:
                 e = FileError(
-                    f'Wrong group ID: { self._header.group_code } instead of '
+                    f'Wrong group ID: {self._header.group_code} instead of '
                     f'{self.sequence}')
                 self.errors.append(e)
                 self._header.error('group_id', e)
@@ -74,8 +73,8 @@ class EdiGroup(object):
             self.valid &= self._trailer.valid
             if self.sequence != self._trailer.group_code:
                 e = FileError(
-                    f'Wrong group ID: { self._trailer.group_code } instead of'
-                    f'{ self.sequence }')
+                    f'Wrong group ID: {self._trailer.group_code} instead of'
+                    f'{self.sequence}')
                 self.errors.append(e)
                 self._trailer.error('group_id', e)
             return self._trailer
@@ -89,13 +88,13 @@ class EdiGroup(object):
 
     def get_transactions(self):
         sequence = 0
-        pattern = re.compile(
-            r'(^{0}.*?(?=^GRT|^{0}))'.format(self.type), re.S | re.M)
+        pattern = re.compile(r'(^{0}.*?(?=^GRT|^{0}))'.format(self.type),
+            re.S | re.M)
         try:
             for transaction_lines in re.findall(pattern, self.lines):
                 transaction_class = self.get_transaction_class()
-                transaction = transaction_class(
-                    self.type, transaction_lines, sequence)
+                transaction = transaction_class(self.type, transaction_lines,
+                    sequence)
                 for error in transaction.errors:
                     if isinstance(error, FileError):
                         self.valid = False
@@ -110,19 +109,17 @@ class EdiGroup(object):
                 if self.transaction_count != trailer.transaction_count:
                     self.valid = False
                     self.get_file().valid = False
-                    e = FileError(
-                        f'Wrong transaction count in GRT: '
-                        f'{ trailer.transaction_count }, counted '
-                        f'{ self.transaction_count }')
+                    e = FileError(f'Wrong transaction count in GRT: '
+                                  f'{trailer.transaction_count}, counted '
+                                  f'{self.transaction_count}')
                     self.errors.append(e)
                     trailer.error('transaction_count', e)
                 if self.record_count != trailer.record_count:
                     self.valid = False
                     self.get_file().valid = False
-                    e = FileError(
-                        f'Wrong record count in GRT: '
-                        f'{ trailer.record_count }, counted '
-                        f'{ self.record_count }')
+                    e = FileError(f'Wrong record count in GRT: '
+                                  f'{trailer.record_count}, counted '
+                                  f'{self.record_count}')
                     self.errors.append(e)
                     trailer.error('record_count', e)
         except FileError as e:
@@ -135,7 +132,6 @@ class EdiGroup(object):
 
 
 class EdiFile(io.TextIOWrapper):
-
     header_class = EdiRecord
     trailer_class = EdiTRL
     group_class = EdiGroup
@@ -149,7 +145,8 @@ class EdiFile(io.TextIOWrapper):
             hdr = buffer.readline()
             for child_class in cls.__subclasses__():
                 if child_class.is_my_header(hdr):
-                    return super().__new__(child_class, buffer, *args, **kwargs)
+                    return super().__new__(child_class, buffer, *args,
+                                           **kwargs)
         return super().__new__(cls, buffer, *args, **kwargs)
 
     def __init__(self, buffer=None, encoding='latin1', *args, **kwargs):
@@ -222,30 +219,27 @@ class EdiFile(io.TextIOWrapper):
 
             if expected_sequence != trailer.group_count:
                 self.valid = False
-                e = FileError(
-                    'Wrong group count in TRL: '
-                    f'{ trailer.group_count }, '
-                    f'counted { expected_sequence }')
+                e = FileError('Wrong group count in TRL: '
+                              f'{trailer.group_count}, '
+                              f'counted {expected_sequence}')
                 self.file_errors.append(e)
                 trailer.error('group_count', e)
 
             self.transaction_count = transaction_count
             if transaction_count != trailer.transaction_count:
                 self.valid = False
-                e = FileError(
-                    'Wrong transaction count in TRL: '
-                    f'{ trailer.transaction_count }, '
-                    f'GRTs say { transaction_count }')
+                e = FileError('Wrong transaction count in TRL: '
+                              f'{trailer.transaction_count}, '
+                              f'GRTs say {transaction_count}')
                 self.file_errors.append(e)
                 trailer.error('transaction_count', e)
 
             self.record_count = record_count
             if record_count != trailer.record_count:
                 self.valid = False
-                e = FileError(
-                    'Wrong record count in TRL: '
-                    f'{ trailer.record_count }, '
-                    f'GRTs say { record_count }')
+                e = FileError('Wrong record count in TRL: '
+                              f'{trailer.record_count}, '
+                              f'GRTs say {record_count}')
                 self.file_errors.append(e)
                 trailer.error('record_count', e)
 

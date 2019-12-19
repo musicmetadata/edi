@@ -1,14 +1,14 @@
 """
 Music Metadata - EDI is a base library for several EDI-based formats by CISAC,
-most notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
+most notably Common Works Registration (CWR) and Common Royalty Distribution
+(CRD).
 
 This file contains field descriptors."""
 
-
-from weakref import WeakKeyDictionary
-from .errors import *
 import html
 from collections import OrderedDict
+
+from .errors import *
 
 
 class EdiField(object):
@@ -63,14 +63,13 @@ class EdiField(object):
         classes = classes.lower()
         if error:
             error = html.escape(str(error))
-            return (
-                f'<span class="field { classes } { label } invalid" '
-                f'title ="{ descriptive_label }: { verbose_value }\n'
-                f'ERROR: { error }">{ edi_value }</span>')
+            return (f'<span class="field {classes} {label} invalid" '
+                    f'title ="{descriptive_label}: {verbose_value}\n'
+                    f'ERROR: {error}">{edi_value}</span>')
         else:
-            return (
-                f'<span class="field { classes } { label }" title ="{ descriptive_label }:'
-                f' { verbose_value }">{ edi_value }</span>')
+            return (f'<span class="field {classes} {label}" title ="'
+                    f'{descriptive_label}:'
+                    f' {verbose_value}">{edi_value}</span>')
 
     def to_dict(self, record, label=None, verbosity=1):
         """Create the dictionary with the value and additional data."""
@@ -93,7 +92,8 @@ class EdiField(object):
 
 
 class EdiNumericField(EdiField):
-    """Numeric fields are right-aligned, zero-padded and default is filled with zeros."""
+    """Numeric fields are right-aligned, zero-padded and default is filled
+    with zeros."""
 
     verbose_type = 'Numeric field'
 
@@ -102,12 +102,10 @@ class EdiNumericField(EdiField):
             try:
                 value = int(value)
             except ValueError:
-                raise RecordError(
-                    f'Value "{ value }" is not numeric')
+                raise RecordError(f'Value "{value}" is not numeric')
             if not 0 <= value < 10 ** self._size:
                 raise FieldError(
-                    f'Not between 0 "{ value }" and "{ 10 ** self._size - 1 }"'
-                )
+                    f'Not between 0 "{value}" and "{10 ** self._size - 1}"')
         super().__set__(instance, value)
 
     def to_edi(self, value):
@@ -126,7 +124,7 @@ class EdiConstantField(EdiField):
                 self._constant = constant
             else:
                 raise AttributeError(
-                    f'Value "{ value }" is not { size } characters long.')
+                    f'Value "{value}" is not {size} characters long.')
         else:
             self._constant = ' ' * size
         super().__init__(size, *args, **kwargs)
@@ -135,7 +133,7 @@ class EdiConstantField(EdiField):
         if value != self._constant:
             super().__set__(instance, value)
             raise FieldWarning(
-                f'Value must be "{ self._constant }", not "{ value }"')
+                f'Value must be "{self._constant}", not "{value}"')
         super().__set__(instance, value)
 
 
@@ -153,9 +151,8 @@ class EdiListField(EdiField):
             value = value.strip()
         if value and value not in self._choices.keys():
             super().__set__(instance, value)
-            raise FieldError(
-                'Value must be one of ' 
-                f'''\"{ '", "'.join(self._choices.keys()) }\"''')
+            raise FieldError('Value must be one of '
+                             f'''\"{'", "'.join(self._choices.keys())}\"''')
         super().__set__(instance, value)
 
     def verbose(self, value):
@@ -187,14 +184,13 @@ class EdiFlagField(EdiListField):
             self._valuedict[instance] = None
             return
         value = dict(
-            (('Y', True), ('N', False), ('U', None), (' ', None))
-        ).get(value, value)
+            (('Y', True), ('N', False), ('U', None), (' ', None))).get(value,
+                                                                       value)
         super().__set__(instance, value)
 
     def to_edi(self, value):
-        value = dict((
-            (True, 'Y'), (False, 'N'), (None, 'U' if self._mandatory else ' ')
-        )).get(value, ' ')
+        value = dict(((True, 'Y'), (False, 'N'),
+                      (None, 'U' if self._mandatory else ' '))).get(value, ' ')
         return value
 
 
@@ -209,14 +205,10 @@ class EdiBooleanField(EdiListField):
         super().__init__(size=size, choices=choices, *args, **kwargs)
 
     def __set__(self, instance, value):
-        value = dict(
-            (('Y', True), ('N', False), (' ', None))
-        ).get(value, value)
+        value = dict((('Y', True), ('N', False), (' ', None))).get(value,
+                                                                   value)
         super().__set__(instance, value)
 
     def to_edi(self, value):
-        value = dict(
-            ((True, 'Y'), (False, 'N'), (None, ' '))
-        ).get(value, ' ')
+        value = dict(((True, 'Y'), (False, 'N'), (None, ' '))).get(value, ' ')
         return value
-
