@@ -73,9 +73,7 @@ class EdiField(object):
 
     def to_dict(self, record, label=None, verbosity=1):
         """Create the dictionary with the value and additional data."""
-        if label is None:
-            label = self._name
-        value = getattr(record, label)
+        value = getattr(record, label or self._name)
         valid = record.valid or label not in record.errors
         if value is None and valid and verbosity <= 1:
             return None
