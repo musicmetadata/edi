@@ -33,3 +33,6 @@ Here is an example of a CWR 2.1 file (all values are randomly generated):
     GRT000010000000100000017   0000000000
     TRL000010000000100000019
 
+You may test it online, no coding skills required: https://music-metadata.herokuapp.com/territories/
+
+The code for it is here: https://github.com/musicmetadata/web-wrapper
