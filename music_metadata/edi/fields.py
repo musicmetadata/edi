@@ -18,7 +18,7 @@ class EdiField(object):
 
     verbose_type = 'Alphanumeric field'
 
-    def __init__(self, size, mandatory=None, *args, **kwargs):
+    def __init__(self, size, mandatory=False, *args, **kwargs):
         self._size = size
         self._mandatory = mandatory
 
