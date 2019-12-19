@@ -27,7 +27,7 @@ class EdiField(object):
 
     def __get__(self, instance, owner=None):
         if instance:
-            return getattr(self, self._name)
+            return instance.__dict__[self._name]
         return self
 
     def __set__(self, instance, value):
@@ -37,7 +37,7 @@ class EdiField(object):
                 value = None
         if value is None and self._mandatory:
             raise FieldError('Value is mandatory')
-        setattr(self, self._name, value)
+        instance.__dict__[self._name] = value
 
     def to_edi(self, value):
         """Return EDI format."""
@@ -48,7 +48,7 @@ class EdiField(object):
     def verbose(self, value):
         """Return verbose (human-readable) value"""
         return value
-
+s
     def to_html(self, value, label='', error=None):
         """Create HTML representation for EDI, used in syntax highlighting"""
         if self:
