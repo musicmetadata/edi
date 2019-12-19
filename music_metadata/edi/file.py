@@ -99,6 +99,7 @@ class EdiGroup(object):
                     if isinstance(error, FileError):
                         self.valid = False
                         self.errors.append(error)
+                        self.get_file().file_errors.append(error)
                         break
                 yield transaction
                 sequence += 1
