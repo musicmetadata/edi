@@ -179,7 +179,7 @@ class EdiFlagField(EdiListField):
     def __set__(self, instance, value):
         if self._mandatory and value == 'U':
             # Unknown resolves to None, so super() makes no sense
-            self._valuedict[instance] = None
+            instance.__dict__[self._name] = None
             return
         value = dict(
             (('Y', True), ('N', False), ('U', None), (' ', None))).get(value,
