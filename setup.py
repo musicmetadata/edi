@@ -14,9 +14,9 @@ setuptools.setup(
     url="https://github.com/musicmetadata/territories",
     packages=setuptools.find_namespace_packages(include=['music_metadata.*']),
     namespace_packages=['music_metadata'],
-    # package_data={
-    #     '': ['*.csv'],
-    # },
+    package_data={
+        '': ['CW19000*'],
+    },
     classifiers=[
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.7",
