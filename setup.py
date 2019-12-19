@@ -5,7 +5,7 @@ with open("README.md", "r") as fh:
 
 setuptools.setup(
     name="music_metadata_edi",
-    version="19rc1",
+    version="19rc2",
     author="Matija Kolarić",
     author_email="matijakolaric@users.noreply.github.com",
     description="Music Metedata - EDI-based formats",
