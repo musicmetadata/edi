@@ -174,7 +174,7 @@ class EdiTransactionRecord(EdiRecord):
             if isinstance(field, EdiConstantField):
                 continue
 
-            f = field.to_dict(self, label, verbosity)
+            f = field.to_dict(record=self, label=label, verbosity=verbosity)
             if f is not None or verbosity > 1:
                 d[label] = f
         return d
