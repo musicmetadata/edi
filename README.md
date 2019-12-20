@@ -8,8 +8,16 @@
 Music Metadata - EDI is a base library for several EDI-based formats by CISAC, most 
 notably Common Works Registration (CWR) and Common Royalty Distribution (CRD).
 
-This library features common (abstract) functionality. Libraries for concrete
-formats are under development.
+This library features common (abstract) functionality. You may test it online, no 
+coding skills required: https://music-metadata.herokuapp.com/edi/
+
+The code for this demo is here: https://github.com/musicmetadata/web-wrapper, it
+can easily be deployed to a free Heroku account.
+
+Libraries for concrete formats are under development, their release schedule depends 
+on sponsors. Currently (December 2019), CWR 2.x parsing and validation are in the 
+alpha phase. This functionality, not yet released as open source is also available 
+in a custom demo: https://web-wrapper.matijakolaric.com/
 
 Here is an example of a CWR 2.1 file (all values are randomly generated):
 
@@ -33,6 +41,3 @@ Here is an example of a CWR 2.1 file (all values are randomly generated):
     GRT000010000000100000017   0000000000
     TRL000010000000100000019
 
-You may test it online, no coding skills required: https://music-metadata.herokuapp.com/edi/
-
-The code for it is here: https://github.com/musicmetadata/web-wrapper
