@@ -24,7 +24,7 @@ class EdiTransaction(object):
             self.lines = lines
             self.records = list(self.split_into_records())
         else:
-            self.lines = []
+            self.lines = ''
             self.records = []
 
     def __str__(self):
@@ -38,8 +38,8 @@ class EdiTransaction(object):
         for expected_r_sequence, line in enumerate(
                 self.lines.strip('\n').split('\n')):
             try:
-                record = self.get_record_class(line[0:3])(
-                    line, expected_r_sequence)
+                Record = self.get_record_class(line[0:3])
+                record = Record(line, expected_r_sequence)
             except (RecordError, FileError) as e:
                 record = EdiRecord(line, expected_r_sequence)
                 record.error(None, e)

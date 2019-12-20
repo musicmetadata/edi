@@ -24,6 +24,7 @@ class EdiField(object):
 
     def __set_name__(self, owner, name):
         self._name = name
+        self._record = owner
 
     def __get__(self, instance, owner=None):
         if instance:
@@ -49,8 +50,10 @@ class EdiField(object):
         """Return verbose (human-readable) value"""
         return value
 
-    def to_html(self, value, label='', error=None):
+    def to_html(self, value, label=None, error=None):
         """Create HTML representation for EDI, used in syntax highlighting"""
+        if label is None:
+            label = self._name
         if self:
             edi_value = self.to_edi(value)
             verbose_value = self.verbose(value)
@@ -73,6 +76,8 @@ class EdiField(object):
 
     def to_dict(self, record, label=None, verbosity=1):
         """Create the dictionary with the value and additional data."""
+        if label is None:
+            label = self._name
         value = getattr(record, label or self._name)
         valid = record.valid or label not in record.errors
         if value is None and valid and verbosity <= 1:
@@ -105,8 +110,10 @@ class EdiNumericField(EdiField):
             try:
                 value = int(value)
             except ValueError:
+                super().__set__(instance, value)
                 raise RecordError(f'Value "{value}" is not numeric')
             if not 0 <= value < 10 ** self._size:
+                super().__set__(instance, value)
                 raise FieldError(
                     f'Not between 0 "{value}" and "{10 ** self._size - 1}"')
         super().__set__(instance, value)
@@ -126,8 +133,9 @@ class EdiConstantField(EdiField):
             if len(constant) == size:
                 self._constant = constant
             else:
+                length = len(constant)
                 raise AttributeError(
-                    f'Value "{value}" is not {size} characters long.')
+                    f'Value "{ length }" is not { size } characters long.')
         else:
             self._constant = ' ' * size
         super().__init__(size, *args, **kwargs)
@@ -155,8 +163,8 @@ class EdiListField(EdiField):
             value = value.strip()
         if value and value not in self._choices.keys():
             super().__set__(instance, value)
-            raise FieldError('Value must be one of '
-                             f'''\"{'", "'.join(self._edi_keys)}\"''')
+            keys = ', '.join(self._edi_keys)
+            raise FieldError(f'Value must be one of "{ keys }"')
         super().__set__(instance, value)
 
     def verbose(self, value):
@@ -188,13 +196,14 @@ class EdiFlagField(EdiListField):
             instance.__dict__[self._name] = None
             return
         value = dict(
-            (('Y', True), ('N', False), ('U', None), (' ', None))).get(value,
-                                                                       value)
+            (('Y', True), ('N', False), ('U', None), (' ', None))
+        ).get(value, value)
         super().__set__(instance, value)
 
     def to_edi(self, value):
-        value = dict(((True, 'Y'), (False, 'N'),
-                      (None, 'U' if self._mandatory else ' '))).get(value, ' ')
+        value = dict((
+            (True, 'Y'), (False, 'N'), (None, 'U' if self._mandatory else ' ')
+        )).get(value, ' ')
         return value
 
 
@@ -210,10 +219,13 @@ class EdiBooleanField(EdiListField):
         self._edi_keys = ('Y', 'N')
 
     def __set__(self, instance, value):
-        value = dict((('Y', True), ('N', False), (' ', None))).get(value,
-                                                                   value)
+        value = dict((
+            ('Y', True), ('N', False), (' ', None)
+        )).get(value, value)
         super().__set__(instance, value)
 
     def to_edi(self, value):
-        value = dict(((True, 'Y'), (False, 'N'), (None, ' '))).get(value, ' ')
+        value = dict((
+            (True, 'Y'), (False, 'N'), (None, ' ')
+        )).get(value, ' ')
         return value

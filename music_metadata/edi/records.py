@@ -44,6 +44,11 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
             else:
                 raise FileError(f'Record too short: {line}')
 
+    def __setattr__(self, key, value):
+        super().__setattr__(key, value)
+        if key == 'record_type' and self.type is None:
+            self.type = key
+
     def to_edi(self):
         output = ''
         for label, field in self._fields.items():
@@ -60,7 +65,8 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
     def warning(self, field, error):
         """Add an error, do not invalidate."""
         if field and field not in self.labels:
-            raise AttributeError(f'No such field {field} in {self.labels}')
+            labels = ', '.join(self.labels)
+            raise AttributeError(f'No such field { field } in { labels }')
         self.errors[field] = error
 
     def error(self, field, error):
@@ -86,12 +92,12 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
             pos += field._size
             value = self.line[start:end]
             if start < actual_length < end:
-                self.warning(label, FieldError('Field truncated'))
+                self.warning(label, FieldWarning('Field truncated'))
             elif end > actual_length:
                 if field._mandatory:
                     self.error(label, RecordError('Mandatory field missing'))
                 else:
-                    self.warning(label, FieldError(
+                    self.warning(label, FieldWarning(
                         'Field missing at the end of the line.'))
             try:
                 setattr(self, label, value)
@@ -117,19 +123,18 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
         return self.get_fields().keys()
 
     def to_html(self):
-        classes = f'record {self.type.lower()}'
+        classes = f'record { self.type.lower() }'
         if not self.valid:
             classes += ' invalid'
-        output = f'<span class="{classes}">'
+        output = f'<span class="{ classes }">'
         for field in self.fields:
             value = getattr(self, field._name)
-            s = field.to_html(value, f'{field._name}',
-                self.errors.get(field._name))
+            s = field.to_html(
+                value, f'{ field._name }', self.errors.get(field._name))
             output += s
         else:
             output += EdiField.to_html(
-                None, self.rest, label='',
-                error=self.errors.get(None))
+                None, self.rest, label='', error=self.errors.get(None))
         output += '</span>'
         return output
 
@@ -147,15 +152,17 @@ class EdiTransactionRecord(EdiRecord):
         """This is really a file-level validation."""
 
         if self.transaction_sequence_number != transaction_sequence:
-            e = FileError(f'Wrong transaction sequence '
-                          f'{self.transaction_sequence_number}, should be '
-                          f'{transaction_sequence}')
+            e = FileError(
+                f'Wrong transaction sequence '
+                f'{ self.transaction_sequence_number }, should be '
+                f'{ transaction_sequence }')
             self.error('transaction_sequence_number', e)
 
         if self.record_sequence_number != record_sequence:
-            e = FileError(f'Wrong transaction sequence '
-                          f'{self.record_sequence_number}, should be '
-                          f'{record_sequence}')
+            e = FileError(
+                f'Wrong transaction sequence '
+                f'{ self.record_sequence_number }, should be '
+                f'{ record_sequence }')
             self.error('record_sequence_number', e)
 
     def validate(self):
@@ -168,9 +175,9 @@ class EdiTransactionRecord(EdiRecord):
 
             # first three fields can be skipped
             if label in [
-                    'record_type',
-                    'transaction_sequence_number',
-                    'record_sequence_number'
+                'record_type',
+                'transaction_sequence_number',
+                'record_sequence_number'
             ] and label not in self.errors.keys():
                 continue
 
