@@ -147,6 +147,7 @@ class EdiListField(EdiField):
 
     def __init__(self, size, choices, *args, **kwargs):
         self._choices = OrderedDict(choices)
+        self._edi_keys = self._choices.keys()
         super().__init__(size, *args, **kwargs)
 
     def __set__(self, instance, value):
@@ -155,7 +156,7 @@ class EdiListField(EdiField):
         if value and value not in self._choices.keys():
             super().__set__(instance, value)
             raise FieldError('Value must be one of '
-                             f'''\"{'", "'.join(self._choices.keys())}\"''')
+                             f'''\"{'", "'.join(self._edi_keys)}\"''')
         super().__set__(instance, value)
 
     def verbose(self, value):
@@ -179,6 +180,7 @@ class EdiFlagField(EdiListField):
         size = 1
         choices = ((True, 'Yes'), (False, 'No'), (None, 'Unknown'))
         super().__init__(size=size, choices=choices, *args, **kwargs)
+        self._edi_keys = ('Y', 'N', 'U')
 
     def __set__(self, instance, value):
         if self._mandatory and value == 'U':
@@ -205,6 +207,7 @@ class EdiBooleanField(EdiListField):
         size = 1
         choices = ((True, 'Yes'), (False, 'No'))
         super().__init__(size=size, choices=choices, *args, **kwargs)
+        self._edi_keys = ('Y', 'N')
 
     def __set__(self, instance, value):
         value = dict((('Y', True), ('N', False), (' ', None))).get(value,

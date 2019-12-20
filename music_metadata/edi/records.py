@@ -127,7 +127,8 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
                 self.errors.get(field._name))
             output += s
         else:
-            output += EdiField.to_html(None, self.rest, label='',
+            output += EdiField.to_html(
+                None, self.rest, label='',
                 error=self.errors.get(None))
         output += '</span>'
         return output
