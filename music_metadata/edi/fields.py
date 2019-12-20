@@ -85,7 +85,11 @@ class EdiField(object):
             d['field_mandatory'] = self._mandatory
         d['valid'] = valid
         if not valid or verbosity > 1:
-            d['error'] = str(record.errors.get(label))
+            error = record.errors.get(label)
+            if error:
+                d['error'] = str(error)
+            else:
+                d['error'] = None
         d['value'] = value
         return d
 
