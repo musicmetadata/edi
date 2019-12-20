@@ -54,7 +54,7 @@ class EdiGroup(object):
                     f'Wrong group ID: {self._header.group_code} instead of '
                     f'{self.sequence}')
                 self.errors.append(e)
-                self._header.error('group_id', e)
+                self._header.error('group_code', e)
             self.valid &= self._header.valid
             return self._header
         return None
@@ -76,7 +76,7 @@ class EdiGroup(object):
                     f'Wrong group ID: {self._trailer.group_code} instead of'
                     f'{self.sequence}')
                 self.errors.append(e)
-                self._trailer.error('group_id', e)
+                self._trailer.error('group_code', e)
             return self._trailer
         return None
 
