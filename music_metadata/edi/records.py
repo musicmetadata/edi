@@ -166,8 +166,11 @@ class EdiTransactionRecord(EdiRecord):
         for label, field in self.get_fields().items():
 
             # first three fields can be skipped
-            if label in ['record_type', 'transaction_sequence_number',
-                         'record_sequence_number']:
+            if label in [
+                    'record_type',
+                    'transaction_sequence_number',
+                    'record_sequence_number'
+            ] and label not in self.errors.keys():
                 continue
 
             # constant fields can be skipper as well

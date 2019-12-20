@@ -27,7 +27,7 @@ class EdiField(object):
 
     def __get__(self, instance, owner=None):
         if instance:
-            return instance.__dict__[self._name]
+            return instance.__dict__.get(self._name)
         return self
 
     def __set__(self, instance, value):
