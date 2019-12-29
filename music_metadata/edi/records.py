@@ -191,6 +191,16 @@ class EdiTransactionRecord(EdiRecord):
         return d
 
 
+class EdiHDR(EdiRecord):
+    """File header, minimal requirements."""
+
+    def get_transmission_dict(self, verbosity=1):
+        return {}
+
+    def get_submitter_dict(self, verbosity=1):
+        return {}
+
+
 class EdiTRL(EdiRecord):
     """File trailer, minimal requirements."""
     record_type = EdiConstantField(size=3, constant='TRL', mandatory=True)

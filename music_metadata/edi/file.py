@@ -138,7 +138,7 @@ class EdiGroup(object):
 
 
 class EdiFile(io.TextIOWrapper):
-    header_class = EdiRecord
+    header_class = EdiHDR
     trailer_class = EdiTRL
     group_class = EdiGroup
 
