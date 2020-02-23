@@ -55,7 +55,9 @@ class EdiGroup(object):
                     f'{self.sequence}')
                 self.errors.append(e)
                 self._header.error('group_code', e)
-                self.get_file().valid = False
+                file = self.get_file()
+                if file:
+                    file.valid = False
             self.valid &= self._header.valid
             return self._header
         return None
@@ -78,7 +80,9 @@ class EdiGroup(object):
                     f'{self.sequence}')
                 self.errors.append(e)
                 self._trailer.error('group_code', e)
-                self.get_file().valid = False
+                file = self.get_file()
+                if file:
+                    file.valid = False
             return self._trailer
         return None
 
