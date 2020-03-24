@@ -23,12 +23,23 @@ class EdiTransaction(object):
         if lines:
             self.lines = lines
             self.records = list(self.split_into_records())
+            self.validate_record_order()
         else:
             self.lines = ''
             self.records = []
 
     def __str__(self):
         return f'{self.type}{self.sequence:08d}'
+
+    def error(self, error, record=None, fieldname=None):
+        """Add an error, and invalidate."""
+        if record is not None:
+            record.error(fieldname, error)
+        self.errors.append(error)
+        self.valid = False
+
+    def validate_record_order(self):
+        return
 
     def get_record_class(self, record_type):
         return self.record_classes.get(record_type, EdiTransactionRecord)

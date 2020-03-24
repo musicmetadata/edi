@@ -24,3 +24,8 @@ class FieldError(ValueError):
 class RecordError(ValueError):
     """Makes the record invalid."""
     pass
+
+
+class TransactionError(ValueError):
+    """Makes the transaction invalid."""
+    pass
