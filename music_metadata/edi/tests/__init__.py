@@ -162,8 +162,8 @@ class TestEdi(unittest.TestCase):
             self.assertEqual(record.sequence, i)
             if i == 1 and not record.valid:
                 self.assertEqual(record.type, '   ')
-                self.assertIn('allowed at this point',
-                              str(record.errors.get('record_type')))
+                self.assertIsNotNone(
+                    record.errors.get('record_type'))
             elif not record.valid:
                 self.assertEqual(record.type, 'SPT')
                 self.assertEqual(record.sequence, 2)
