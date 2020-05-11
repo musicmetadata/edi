@@ -63,7 +63,7 @@ class EdiTransaction(object):
             self.valid &= record.valid
             for error in record.errors.values():
                 if isinstance(error, FileError):
-                    self.errors.append(error)
+                    self.error(error, record)
             yield record
 
     def to_dict(self, verbosity=1):

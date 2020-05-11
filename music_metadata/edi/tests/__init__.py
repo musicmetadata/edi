@@ -201,7 +201,10 @@ class TestEdi(unittest.TestCase):
         with open(CWR2_PATH, 'rb') as f:
             e = EdiFile(f)
             self.assertEqual(str(e), CWR2_PATH)
-            self.assertEqual(e.get_header().record_type, 'HDR')
+            header = e.get_header()
+            self.assertEqual(header.record_type, 'HDR')
+            self.assertEqual(header.get_transmission_dict(), {})
+            self.assertEqual(header.get_submitter_dict(), {})
             for group in e.get_groups():
                 self.assertEqual(str(group), 'NWR')
 
@@ -236,22 +239,29 @@ class TestEdi(unittest.TestCase):
             self.assertEqual(str(e), CWR3_PATH)
             self.assertEqual(e.get_header().record_type, 'HDR')
             for group in e.get_groups():
-                self.assertEqual(group.get_header().transaction_type, 'ISR')
-                self.assertEqual(group.get_file(), e)
+                self.assertEqual(group.header().transaction_type, 'ISR')
+                self.assertEqual(group.file(), e)
                 for transaction in group.get_transactions():
                     for record in transaction.records:
                         record.to_html()
                 self.assertTrue(group.valid)
                 self.assertTrue(e.valid)
-                del group._header
-                group.sequence += 2
-                header = group.get_header()
-                self.assertFalse(header.valid)
-                self.assertFalse(group.valid)
-                self.assertFalse(e.valid)
-                del group._trailer
-                trailer = group.get_trailer()
+                header = group.header()
+                header.group_code += 1
+                group.header(header=header)
+                group.header(header.to_edi())
+                trailer = group.trailer()
+                trailer.group_code += 1
+                trailer.transaction_count += 1
+                group.trailer(trailer=trailer)
                 self.assertFalse(trailer.valid)
+                group.trailer(trailer.to_edi())
+                group.list_transactions()
+                self.assertFalse(group.valid)
+                # self.assertFalse(e.valid)
+                # del group._trailer
+                # trailer = group.get_trailer()
+                # self.assertFalse(trailer.valid)
 
     def test_new_file(self):
         """
@@ -259,7 +269,7 @@ class TestEdi(unittest.TestCase):
         """
         EdiFile()
         group = EdiGroup(gtype='WRK')
-        self.assertIsNone(group.get_file())
+        self.assertIsNone(group.file())
         t = EdiTransaction(gtype='WRK')
         self.assertEqual(
             t.to_dict(), {'error': 'Not implemented for this file type.'})
