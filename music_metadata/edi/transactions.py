@@ -25,7 +25,7 @@ class EdiTransaction(object):
             self.records = list(self.split_into_records())
             self.validate_record_order()
         else:
-            self.lines = ''
+            self.lines = []
             self.records = []
 
     def __str__(self):
@@ -46,8 +46,7 @@ class EdiTransaction(object):
 
     def split_into_records(self):
         expected_t_sequence = self.sequence or 0
-        for expected_r_sequence, line in enumerate(
-                self.lines.strip('\n').split('\n')):
+        for expected_r_sequence, line in enumerate(self.lines):
             try:
                 Record = self.get_record_class(line[0:3])
                 record = Record(line, expected_r_sequence)
