@@ -277,7 +277,7 @@ class EdiFile(io.TextIOWrapper):
         self.record_count = 2
         if self.seekable():
             self.position = self.tell()
-        self.current_line = self.header_line = self.readline()
+        self.header_line = self.readline()
         self._header = None
         self._trailer = None
         self.current_group = None

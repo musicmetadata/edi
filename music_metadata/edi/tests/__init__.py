@@ -205,7 +205,6 @@ class TestEdi(unittest.TestCase):
             self.assertEqual(header.get_transmission_dict(), {})
             self.assertEqual(header.get_submitter_dict(), {})
             for group in e.get_groups():
-                print(str(group))
                 self.assertEqual(str(group), 'NWR')
 
                 transactions = group.get_transactions()
