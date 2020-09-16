@@ -2,7 +2,6 @@ import os
 import unittest
 
 from music_metadata.edi.file import EdiFile, EdiGroup
-from music_metadata.edi.fields import *
 from music_metadata.edi.records import *
 from music_metadata.edi.transactions import EdiTransaction
 
@@ -114,7 +113,7 @@ class TestEdi(unittest.TestCase):
 
     def test_edirecord(self):
         with self.assertRaises(FileError):
-            record = EdiRecord('AA')
+            EdiRecord('AA')
 
         class Record(EdiRecord):
             fil = EdiConstantField(size=1)
@@ -225,8 +224,45 @@ class TestEdi(unittest.TestCase):
                 transaction = next(transactions)
                 self.transaction_3(transaction)
 
+                for i, transaction in enumerate(transactions):
+                    if i < 95:
+                        self.assertTrue(transaction.valid)
+                    else:
+                        self.assertFalse(transaction.valid)
+
+    def test_cwr21_processing_error_reporting(self):
+        """
+        Test EDI part of a CWR2.1 import.
+        """
+
+        with open(__file__, 'rb') as f:
+            e = EdiFile(f)
+            with self.assertRaises(FileError):
+                list(e.get_groups())
+
+        with open(CWR2_PATH, 'rb') as f:
+            e = EdiFile(f)
+            with self.assertWarns(DeprecationWarning):
+                e.get_header()
+            for group in e.list_groups():
+                with self.assertWarns(DeprecationWarning):
+                    f = group.get_file()
+                self.assertEqual(e, f)
+                with self.assertWarns(DeprecationWarning):
+                    group.get_header()
+                with self.assertRaises(RuntimeError):
+                    # can not be run twice
+                    list(group.get_transactions())
+                with self.assertWarns(DeprecationWarning):
+                    group.get_trailer()
+            with self.assertWarns(DeprecationWarning):
+                e.get_trailer()
+        with open(CWR2_PATH, 'rb') as f:
+            e = EdiFile(f)
+            for group in e.get_groups():
+                transactions = group.list_transactions()
                 for transaction in transactions:
-                    self.assertTrue(transaction.valid)
+                    list(transaction.split_into_records())
 
     def test_cwr30_processing(self):
         """
@@ -259,21 +295,21 @@ class TestEdi(unittest.TestCase):
                 group.trailer(trailer.to_edi())
                 # self.assertFalse(group.valid)
 
-    # def test_new_file(self):
-    #     """
-    #     Test EDI generation.
-    #     """
-    #     EdiFile()
-    #     group = EdiGroup(gtype='WRK')
-    #     self.assertIsNone(group.file())
-    #     t = EdiTransaction(gtype='WRK')
-    #     self.assertEqual(
-    #         t.to_dict(), {'error': 'Not implemented for this file type.'})
-    #     r = EdiTransactionRecord()
-    #     r.record_type = t.type
-    #     with self.assertRaises(ValueError):
-    #         r.record_sequence_number = 'A'
-    #     r.transaction_sequence_number = 0
-    #     r.record_sequence_number = 0
-    #     self.assertEqual(r.to_edi(), 'WRK0000000000000000')
-    #     self.assertEqual(str(r), 'WRK0000000000000000')
+    def test_new_file(self):
+        """
+        Test EDI generation.
+        """
+        EdiFile()
+        group = EdiGroup('GHRWRK')
+        self.assertIsNone(group.file())
+        t = EdiTransaction('WRK')
+        self.assertEqual(
+            t.to_dict(), {'error': 'Not implemented for this file type.'})
+        r = EdiTransactionRecord()
+        r.record_type = t.type
+        with self.assertRaises(ValueError):
+            r.record_sequence_number = 'A'
+        r.transaction_sequence_number = 0
+        r.record_sequence_number = 0
+        self.assertEqual(r.to_edi(), 'WRK0000000000000000')
+        self.assertEqual(str(r), 'WRK0000000000000000')
