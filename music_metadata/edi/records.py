@@ -107,7 +107,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
                 self.error(label, e)
             except (RecordError, FileError) as e:
                 self.error(label, e)
-                raise
+
         else:
             self.rest = self.line[pos:]
 
@@ -198,7 +198,10 @@ class EdiHDR(EdiRecord):
         return {}
 
     def get_submitter_dict(self, verbosity=1):
-        return {}
+        return {
+            'error': 'Not implemented for this file type',
+            'header': self.to_edi()
+        }
 
 
 class EdiTRL(EdiRecord):

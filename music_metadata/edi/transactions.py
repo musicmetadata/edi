@@ -51,7 +51,7 @@ class EdiTransaction(object):
                 Record = self.get_record_class(line[0:3])
                 record = Record(line, expected_r_sequence)
             except (RecordError, FileError) as e:
-                record = EdiRecord(line, expected_r_sequence)
+                record = EdiTransactionRecord(line, expected_r_sequence)
                 record.error(None, e)
                 self.valid &= record.valid
                 yield record
@@ -66,4 +66,6 @@ class EdiTransaction(object):
             yield record
 
     def to_dict(self, verbosity=1):
-        return {'error': 'Not implemented for this file type.'}
+        return {
+            'error': 'Not implemented for this file type.',
+            'records': [r.to_edi() for r in self.records]}

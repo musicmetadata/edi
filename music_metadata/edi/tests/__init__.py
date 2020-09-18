@@ -202,7 +202,7 @@ class TestEdi(unittest.TestCase):
             header = e.get_header()
             self.assertEqual(header.record_type, 'HDR')
             self.assertEqual(header.get_transmission_dict(), {})
-            self.assertEqual(header.get_submitter_dict(), {})
+            self.assertIn('error', header.get_submitter_dict())
             for group in e.get_groups():
                 self.assertEqual(str(group), 'NWR')
 
@@ -304,7 +304,9 @@ class TestEdi(unittest.TestCase):
         self.assertIsNone(group.file())
         t = EdiTransaction('WRK')
         self.assertEqual(
-            t.to_dict(), {'error': 'Not implemented for this file type.'})
+            t.to_dict(), {
+                'error': 'Not implemented for this file type.',
+                'records': []})
         r = EdiTransactionRecord()
         r.record_type = t.type
         with self.assertRaises(ValueError):

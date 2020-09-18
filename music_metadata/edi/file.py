@@ -228,6 +228,7 @@ class EdiFile(io.TextIOWrapper):
         if self.seekable():
             self.position = self.tell()
         self.header_line = self.readline()
+        self.trailer_line = ''
         self.current_line = self.header_line
         self._header = None
         self._trailer = None
