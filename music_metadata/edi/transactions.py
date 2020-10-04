@@ -63,6 +63,7 @@ class EdiTransaction(object):
             for error in record.errors.values():
                 if isinstance(error, FileError):
                     self.error(error, record)
+                    break
             yield record
 
     def to_dict(self, verbosity=1):
