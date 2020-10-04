@@ -272,7 +272,7 @@ class TestEdi(unittest.TestCase):
         with open(CWR3_PATH, 'rb') as f:
             e = EdiFile(f)
             self.assertEqual(str(e), CWR3_PATH)
-            self.assertEqual(e.get_header().record_type, 'HDR')
+            self.assertEqual(e.header().record_type, 'HDR')
             for group in e.get_groups():
                 self.assertEqual(group.header().transaction_type, 'ISR')
                 self.assertEqual(group.file(), e)

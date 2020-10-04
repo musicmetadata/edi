@@ -132,19 +132,8 @@ class EdiGroup(object):
             self._header = self.header_class(self.header_line)
         elif self._header:
             return self._header
-        elif self.header_line:
-            self._header = self.header_class(self.header_line)
         else:
             return None
-        if self.sequence != self._header.group_code:
-            e = FileError(
-                f'Wrong group ID: {self._header.group_code} instead of'
-                f'{self.sequence}')
-            self.errors.append(e)
-            self._header.error('group_code', e)
-            file = self.file()
-            if file:
-                file.valid = False
         self.valid &= self._header.valid
         return self._header
 
@@ -160,7 +149,7 @@ class EdiGroup(object):
             self.trailer_line = trailer_line
             self._trailer = self.trailer_class(self.trailer_line)
         elif self._trailer:
-            return self._trailer
+            pass
         elif self.trailer_line:
             self._trailer = self.trailer_class(self.trailer_line)
         else:
@@ -199,19 +188,6 @@ class EdiFile(io.TextIOWrapper):
         if self.seekable():
             self.position = self.tell()
         return line
-
-    # def __new__(cls, buffer=None, *args, **kwargs):
-    #     if buffer:
-    #         hdr = buffer.readline().decode('latin1')
-    #         for child_class in cls.__subclasses__():
-    #             if child_class.is_my_header(hdr):
-    #                 return super().__new__(child_class, buffer, *args,
-    #                                        **kwargs)
-    #     else:
-    #         hdr = None
-    #     obj = super().__new__(cls, buffer, *args, **kwargs)
-    #     obj.header_line = hdr
-    #     return obj
 
     def __init__(self, buffer=None, encoding='latin1', *args, **kwargs):
         if buffer is None:

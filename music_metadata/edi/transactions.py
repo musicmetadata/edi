@@ -53,7 +53,7 @@ class EdiTransaction(object):
             except (RecordError, FileError) as e:
                 record = EdiTransactionRecord(line, expected_r_sequence)
                 record.error(None, e)
-                self.valid &= record.valid
+                self.valid = False
                 yield record
                 continue
 
