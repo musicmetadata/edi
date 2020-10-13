@@ -33,7 +33,7 @@ class EdiTransaction(object):
 
     def error(self, error, record=None, fieldname=None):
         """Add an error, and invalidate."""
-        if record is not None:
+        if record is not None and error not in record.errors:
             record.error(fieldname, error)
         self.errors.append(error)
         self.valid = False
@@ -53,7 +53,7 @@ class EdiTransaction(object):
             except (RecordError, FileError) as e:
                 record = EdiTransactionRecord(line, expected_r_sequence)
                 record.error(None, e)
-                self.valid = False
+                self.valid &= record.valid
                 yield record
                 continue
 
