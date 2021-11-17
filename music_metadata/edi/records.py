@@ -51,7 +51,7 @@ class EdiRecord(object, metaclass=EdiRecordMeta):
 
     def to_edi(self):
         output = ''
-        for label, field in self._fields.items():
+        for label, field in self.get_fields().items():
             value = getattr(self, label)
             s = field.to_edi(value)
             output += s
